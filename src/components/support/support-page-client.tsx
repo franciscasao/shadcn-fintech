@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { AnimatePresence, motion } from "motion/react"
+import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -54,7 +55,6 @@ import {
   WalletIcon,
   HelpCircleIcon,
   SendIcon,
-  XIcon,
   BotIcon,
   UserIcon,
 } from "lucide-react"
@@ -94,6 +94,19 @@ function FaqTab() {
   const [search, setSearch] = React.useState("")
   const [categoryFilter, setCategoryFilter] = React.useState<string>("all")
   const [openId, setOpenId] = React.useState<string | null>(null)
+  const [feedback, setFeedback] = React.useState<Record<string, "yes" | "no">>({})
+  const hasShownToastRef = React.useRef(false)
+
+  function recordFeedback(id: string, value: "yes" | "no") {
+    if (feedback[id]) return
+    setFeedback((prev) => ({ ...prev, [id]: value }))
+    if (!hasShownToastRef.current) {
+      hasShownToastRef.current = true
+      toast("Thanks for the feedback", {
+        description: "Your input helps us improve our help center.",
+      })
+    }
+  }
 
   const filtered = faqItems.filter((item) => {
     const matchesSearch =
@@ -185,11 +198,41 @@ function FaqTab() {
                             >
                               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.answer}</p>
                               <div className="mt-3 flex items-center gap-3">
-                                <span className="text-[11px] text-muted-foreground">Was this helpful?</span>
-                                <div className="flex gap-1">
-                                  <button type="button" className="rounded-md px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-emerald-500/10 hover:text-emerald-600">Yes</button>
-                                  <button type="button" className="rounded-md px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-rose-500/10 hover:text-rose-600">No</button>
-                                </div>
+                                {feedback[item.id] ? (
+                                  <motion.span
+                                    initial={{ opacity: 0, x: -4 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400"
+                                  >
+                                    Thanks for the feedback ✓
+                                  </motion.span>
+                                ) : (
+                                  <>
+                                    <span className="text-[11px] text-muted-foreground">Was this helpful?</span>
+                                    <div className="flex gap-1">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          recordFeedback(item.id, "yes")
+                                        }}
+                                        className="rounded-md px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-emerald-500/10 hover:text-emerald-600"
+                                      >
+                                        Yes
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          recordFeedback(item.id, "no")
+                                        }}
+                                        className="rounded-md px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-rose-500/10 hover:text-rose-600"
+                                      >
+                                        No
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
                               </div>
                             </motion.div>
                           )}

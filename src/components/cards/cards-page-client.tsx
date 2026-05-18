@@ -6,6 +6,7 @@ import { InteractiveCard } from "@/components/cards/interactive-card"
 import { CardControls } from "@/components/cards/card-controls"
 import { VirtualCardGenerator } from "@/components/cards/virtual-card-generator"
 import { CardList } from "@/components/cards/card-list"
+import { ReportCardDialog } from "@/components/cards/report-card-dialog"
 
 export function CardsPageClient() {
   const [cards, setCards] = useState<CardData[]>(cardsData)
@@ -26,8 +27,11 @@ export function CardsPageClient() {
       return map
     },
   )
+  const [reportedMap, setReportedMap] = useState<Record<string, Date>>({})
+  const [reportOpen, setReportOpen] = useState(false)
 
   const activeCard = cards.find((c) => c.id === activeCardId) ?? cards[0]
+  const activeReportedDate = reportedMap[activeCardId]
 
   const toggleFreeze = useCallback(() => {
     setFrozenMap((prev) => ({
@@ -66,6 +70,8 @@ export function CardsPageClient() {
             onToggleFreeze={toggleFreeze}
             dailyLimit={dailyLimits[activeCardId] ?? activeCard.dailyLimit}
             onDailyLimitChange={handleDailyLimitChange}
+            reportedReplacementDate={activeReportedDate}
+            onReportClick={() => setReportOpen(true)}
           />
         </div>
       </div>
@@ -84,6 +90,16 @@ export function CardsPageClient() {
           />
         </div>
       </div>
+
+      <ReportCardDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        card={activeCard}
+        onReported={({ replacementDate }) => {
+          setReportedMap((prev) => ({ ...prev, [activeCardId]: replacementDate }))
+          setFrozenMap((prev) => ({ ...prev, [activeCardId]: true }))
+        }}
+      />
     </div>
   )
 }

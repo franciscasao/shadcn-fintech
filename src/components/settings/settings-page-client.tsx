@@ -3,7 +3,16 @@
 import * as React from "react"
 import { useSearchParams } from "next/navigation"
 import { useTheme } from "next-themes"
+import { motion } from "motion/react"
+import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { ChangePasswordDialog } from "@/components/settings/change-password-dialog"
+import { UpgradePlanDialog } from "@/components/settings/upgrade-plan-dialog"
+import { UpdatePaymentDialog } from "@/components/settings/update-payment-dialog"
+import {
+  TwoFactorDialog,
+  DisableTwoFactorDialog,
+} from "@/components/settings/two-factor-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -65,7 +74,12 @@ function ProfileTab() {
 
   function handleSave() {
     setSaving(true)
-    setTimeout(() => setSaving(false), 1200)
+    setTimeout(() => {
+      setSaving(false)
+      toast.success("Profile updated", {
+        description: "Your changes have been saved.",
+      })
+    }, 1200)
   }
 
   return (
@@ -123,14 +137,43 @@ function ProfileTab() {
 
 // ── Security Tab ─────────────────────────────────────────────────────────────
 
-const mockSessions = [
-  { device: "MacBook Pro", icon: <LaptopIcon className="size-4" />, location: "San Francisco, CA", lastActive: "Active now" },
-  { device: "iPhone 15", icon: <SmartphoneIcon className="size-4" />, location: "San Francisco, CA", lastActive: "2 hours ago" },
-  { device: "iPad Air", icon: <TabletIcon className="size-4" />, location: "New York, NY", lastActive: "3 days ago" },
+type Session = {
+  id: string
+  device: string
+  icon: React.ReactNode
+  location: string
+  lastActive: string
+}
+
+const initialSessions: Session[] = [
+  { id: "s1", device: "MacBook Pro", icon: <LaptopIcon className="size-4" />, location: "San Francisco, CA", lastActive: "Active now" },
+  { id: "s2", device: "iPhone 15", icon: <SmartphoneIcon className="size-4" />, location: "San Francisco, CA", lastActive: "2 hours ago" },
+  { id: "s3", device: "iPad Air", icon: <TabletIcon className="size-4" />, location: "New York, NY", lastActive: "3 days ago" },
 ]
 
 function SecurityTab() {
   const [twoFA, setTwoFA] = React.useState(true)
+  const [twoFASetupOpen, setTwoFASetupOpen] = React.useState(false)
+  const [twoFADisableOpen, setTwoFADisableOpen] = React.useState(false)
+  const [sessions, setSessions] = React.useState<Session[]>(initialSessions)
+  const [passwordOpen, setPasswordOpen] = React.useState(false)
+
+  function handleTwoFAToggle(next: boolean) {
+    if (next) {
+      // Optimistically reflect ON in UI while setup runs
+      setTwoFA(true)
+      setTwoFASetupOpen(true)
+    } else {
+      setTwoFADisableOpen(true)
+    }
+  }
+
+  function revoke(s: Session) {
+    setSessions((prev) => prev.filter((x) => x.id !== s.id))
+    toast.success("Session revoked", {
+      description: `${s.device} has been signed out.`,
+    })
+  }
 
   return (
     <div className="space-y-6">
@@ -164,7 +207,7 @@ function SecurityTab() {
             </div>
           </div>
           <div className="flex justify-end">
-            <Button>Update Password</Button>
+            <Button onClick={() => setPasswordOpen(true)}>Update Password</Button>
           </div>
         </CardContent>
       </Card>
@@ -189,7 +232,7 @@ function SecurityTab() {
                   : "Enable 2FA for enhanced security"}
               </p>
             </div>
-            <Switch checked={twoFA} onCheckedChange={setTwoFA} />
+            <Switch checked={twoFA} onCheckedChange={handleTwoFAToggle} />
           </div>
         </CardContent>
       </Card>
@@ -203,9 +246,13 @@ function SecurityTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {mockSessions.map((s) => (
-            <div
-              key={s.device}
+          {sessions.map((s) => (
+            <motion.div
+              key={s.id}
+              layout
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, x: -8 }}
               className="flex items-center justify-between rounded-lg border p-3"
             >
               <div className="flex items-center gap-3">
@@ -220,14 +267,32 @@ function SecurityTab() {
                 </div>
               </div>
               {s.lastActive !== "Active now" && (
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => revoke(s)}>
                   Revoke
                 </Button>
               )}
-            </div>
+            </motion.div>
           ))}
+          {sessions.length === 1 && (
+            <p className="text-xs text-muted-foreground">
+              Only your current session is active.
+            </p>
+          )}
         </CardContent>
       </Card>
+
+      <ChangePasswordDialog open={passwordOpen} onOpenChange={setPasswordOpen} />
+      <TwoFactorDialog
+        open={twoFASetupOpen}
+        onOpenChange={setTwoFASetupOpen}
+        onComplete={() => setTwoFA(true)}
+        onCancel={() => setTwoFA(false)}
+      />
+      <DisableTwoFactorDialog
+        open={twoFADisableOpen}
+        onOpenChange={setTwoFADisableOpen}
+        onConfirm={() => setTwoFA(false)}
+      />
     </div>
   )
 }
@@ -305,7 +370,47 @@ const proFeatures = [
   "Export to CSV & PDF",
 ]
 
+function downloadInvoicePdf(invoiceId: string, date: string) {
+  // Minimal valid PDF skeleton — opens in any reader showing the invoice id.
+  const content = `%PDF-1.4
+1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj
+2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj
+3 0 obj<</Type/Page/Parent 2 0 R/Resources<</Font<</F1 5 0 R>>>>/MediaBox[0 0 612 792]/Contents 4 0 R>>endobj
+4 0 obj<</Length 120>>stream
+BT /F1 18 Tf 72 720 Td (Vault Invoice) Tj ET
+BT /F1 11 Tf 72 690 Td (Invoice: ${invoiceId}) Tj ET
+BT /F1 11 Tf 72 672 Td (Date: ${date}) Tj ET
+BT /F1 11 Tf 72 654 Td (Amount: $0.00 - Free Plan) Tj ET
+endstream
+endobj
+5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj
+xref
+0 6
+0000000000 65535 f
+0000000009 00000 n
+0000000056 00000 n
+0000000103 00000 n
+0000000206 00000 n
+0000000378 00000 n
+trailer<</Size 6/Root 1 0 R>>
+startxref
+443
+%%EOF`
+  const blob = new Blob([content], { type: "application/pdf" })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = `vault-${invoiceId.toLowerCase()}.pdf`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 function BillingTab() {
+  const [upgradeOpen, setUpgradeOpen] = React.useState(false)
+  const [paymentOpen, setPaymentOpen] = React.useState(false)
+
   return (
     <div className="space-y-6">
       {/* Current Plan */}
@@ -360,7 +465,7 @@ function BillingTab() {
               </div>
             </div>
             <div className="mt-4">
-              <Button>Upgrade to Pro</Button>
+              <Button onClick={() => setUpgradeOpen(true)}>Upgrade to Pro</Button>
             </div>
           </div>
         </CardContent>
@@ -383,12 +488,15 @@ function BillingTab() {
                 <p className="text-xs text-muted-foreground">Expires 09/28</p>
               </div>
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setPaymentOpen(true)}>
               Update
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      <UpgradePlanDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} />
+      <UpdatePaymentDialog open={paymentOpen} onOpenChange={setPaymentOpen} />
 
       {/* Billing History */}
       <Card>
@@ -417,9 +525,18 @@ function BillingTab() {
                     <Badge variant="secondary">{inv.status}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon-xs">
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={() => {
+                        downloadInvoicePdf(inv.id, inv.date)
+                        toast.success("Invoice downloaded", {
+                          description: `${inv.id} (${inv.date})`,
+                        })
+                      }}
+                    >
                       <DownloadIcon className="size-3.5" />
-                      <span className="sr-only">Download</span>
+                      <span className="sr-only">Download {inv.id}</span>
                     </Button>
                   </TableCell>
                 </TableRow>

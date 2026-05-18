@@ -4,6 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "motion/react"
+import { toast } from "sonner"
 import {
   LandmarkIcon,
   MailIcon,
@@ -54,6 +55,7 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [agreed, setAgreed] = useState(false)
+  const [provider, setProvider] = useState<"google" | "apple" | null>(null)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -64,6 +66,17 @@ export default function SignUpPage() {
       setIsSuccess(true)
       setTimeout(() => setIsSuccess(false), 2000)
     }, 1500)
+  }
+
+  const handleOAuth = (which: "google" | "apple") => {
+    if (isLoading || provider) return
+    setProvider(which)
+    setTimeout(() => {
+      setProvider(null)
+      toast.success(`Account created with ${which === "google" ? "Google" : "Apple"}`, {
+        description: "Welcome aboard! Let's set up your wallet.",
+      })
+    }, 1300)
   }
 
   return (
@@ -132,24 +145,44 @@ export default function SignUpPage() {
             className="mt-8 grid grid-cols-2 gap-3"
             variants={itemVariants}
           >
-            <Button variant="outline" size="lg" className="gap-2">
-              <Image
-                src="/logos/google-com.png"
-                alt="Google"
-                width={16}
-                height={16}
-                className="size-4"
-              />
+            <Button
+              variant="outline"
+              size="lg"
+              className="gap-2"
+              onClick={() => handleOAuth("google")}
+              disabled={!!provider || isLoading}
+            >
+              {provider === "google" ? (
+                <Loader2Icon className="size-4 animate-spin" />
+              ) : (
+                <Image
+                  src="/logos/google-com.png"
+                  alt="Google"
+                  width={16}
+                  height={16}
+                  className="size-4"
+                />
+              )}
               <span className="text-sm">Google</span>
             </Button>
-            <Button variant="outline" size="lg" className="gap-2">
-              <Image
-                src="/logos/apple-com.png"
-                alt="Apple"
-                width={16}
-                height={16}
-                className="size-4"
-              />
+            <Button
+              variant="outline"
+              size="lg"
+              className="gap-2"
+              onClick={() => handleOAuth("apple")}
+              disabled={!!provider || isLoading}
+            >
+              {provider === "apple" ? (
+                <Loader2Icon className="size-4 animate-spin" />
+              ) : (
+                <Image
+                  src="/logos/apple-com.png"
+                  alt="Apple"
+                  width={16}
+                  height={16}
+                  className="size-4"
+                />
+              )}
               <span className="text-sm">Apple</span>
             </Button>
           </motion.div>

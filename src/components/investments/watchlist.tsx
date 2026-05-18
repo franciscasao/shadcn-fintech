@@ -4,6 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import { LineChart, Line } from "recharts"
 import { X, Plus } from "lucide-react"
+import { toast } from "sonner"
 import {
   Card,
   CardContent,
@@ -14,12 +15,24 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { watchlistItems, type WatchlistItem } from "@/data/seed"
+import { AddWatchlistDialog } from "@/components/investments/add-watchlist-dialog"
 
 export function Watchlist() {
   const [items, setItems] = useState<WatchlistItem[]>(watchlistItems)
+  const [addOpen, setAddOpen] = useState(false)
 
   const removeItem = (id: string) => {
+    const removed = items.find((w) => w.id === id)
     setItems((prev) => prev.filter((w) => w.id !== id))
+    if (removed) {
+      toast(`Removed ${removed.symbol}`, {
+        description: `${removed.name} is no longer in your watchlist.`,
+      })
+    }
+  }
+
+  const addItem = (item: WatchlistItem) => {
+    setItems((prev) => [item, ...prev])
   }
 
   return (
@@ -109,12 +122,24 @@ export function Watchlist() {
         </div>
 
         <div className="px-4 pt-3">
-          <Button variant="outline" size="sm" className="w-full gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full gap-1.5"
+            onClick={() => setAddOpen(true)}
+          >
             <Plus className="size-3.5" />
             Add to Watchlist
           </Button>
         </div>
       </CardContent>
+
+      <AddWatchlistDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        existingSymbols={items.map((i) => i.symbol)}
+        onAdd={addItem}
+      />
     </Card>
   )
 }

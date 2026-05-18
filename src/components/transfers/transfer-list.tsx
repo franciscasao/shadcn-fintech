@@ -83,9 +83,16 @@ export function TransferList({ transfers, onCancel }: TransferListProps) {
 
               {/* Name + note */}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">
-                  {transfer.contactName}
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <p className="truncate text-sm font-medium">
+                    {transfer.contactName}
+                  </p>
+                  {transfer.frequency && transfer.frequency !== "one-time" && (
+                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-medium capitalize">
+                      {transfer.frequency.replace("-", " ")}
+                    </Badge>
+                  )}
+                </div>
                 {transfer.note && (
                   <p className="truncate text-xs italic text-muted-foreground">
                     {transfer.note}

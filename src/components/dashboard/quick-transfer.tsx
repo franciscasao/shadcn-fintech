@@ -18,6 +18,7 @@ import {
   CheckCircle2Icon,
 } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
+import { AllContactsSheet } from "@/components/dashboard/all-contacts-sheet"
 
 type SendState = "idle" | "sending" | "success"
 
@@ -25,6 +26,7 @@ export function QuickTransfer() {
   const [selectedContact, setSelectedContact] = useState(contacts[0].id)
   const [amount, setAmount] = useState("250.00")
   const [sendState, setSendState] = useState<SendState>("idle")
+  const [allContactsOpen, setAllContactsOpen] = useState(false)
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null)
   const selected = contacts.find((c) => c.id === selectedContact)
 
@@ -47,7 +49,12 @@ export function QuickTransfer() {
         <CardTitle className="text-base font-semibold">
           Quick Transfer
         </CardTitle>
-        <Button variant="ghost" size="sm" className="h-auto gap-1 px-0 text-xs text-muted-foreground">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-auto gap-1 px-0 text-xs text-muted-foreground"
+          onClick={() => setAllContactsOpen(true)}
+        >
           See All Contacts
           <ChevronRightIcon className="size-3" />
         </Button>
@@ -95,6 +102,8 @@ export function QuickTransfer() {
             variant="outline"
             size="icon"
             className="size-10 shrink-0 rounded-full"
+            onClick={() => setAllContactsOpen(true)}
+            aria-label="See all contacts"
           >
             <ChevronRightIcon className="size-4" />
           </Button>
@@ -180,6 +189,13 @@ export function QuickTransfer() {
           )}
         </AnimatePresence>
       </CardContent>
+
+      <AllContactsSheet
+        open={allContactsOpen}
+        onOpenChange={setAllContactsOpen}
+        selectedId={selectedContact}
+        onSelect={setSelectedContact}
+      />
     </Card>
   )
 }

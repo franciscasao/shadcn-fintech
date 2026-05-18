@@ -30,6 +30,7 @@ import {
   BellIcon,
   LogInIcon,
   UserPlusIcon,
+  ShieldCheckIcon,
 } from "lucide-react"
 
 const data = {
@@ -56,6 +57,7 @@ const data = {
   navAuth: [
     { title: "Sign In", url: "/sign-in", icon: <LogInIcon /> },
     { title: "Sign Up", url: "/sign-up", icon: <UserPlusIcon /> },
+    { title: "Verify Identity", url: "/verify-identity", icon: <ShieldCheckIcon /> },
   ],
   navSecondary: [
     { title: "Notifications", url: "/notifications", icon: <BellIcon /> },

@@ -1,9 +1,12 @@
 "use client"
 
+import { format } from "date-fns"
+import { AlertTriangleIcon, PackageIcon } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { CardData } from "@/data/seed"
 
@@ -13,6 +16,8 @@ interface CardControlsProps {
   onToggleFreeze: () => void
   dailyLimit: number
   onDailyLimitChange: (val: number) => void
+  reportedReplacementDate?: Date
+  onReportClick?: () => void
 }
 
 function formatCurrency(value: number): string {
@@ -30,11 +35,14 @@ export function CardControls({
   onToggleFreeze,
   dailyLimit,
   onDailyLimitChange,
+  reportedReplacementDate,
+  onReportClick,
 }: CardControlsProps) {
   const spendPercent =
     card.monthlyLimit > 0
       ? Math.round((card.monthlySpend / card.monthlyLimit) * 100)
       : 0
+  const reported = !!reportedReplacementDate
 
   return (
     <Card>
@@ -42,6 +50,21 @@ export function CardControls({
         <CardTitle>Card Controls</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* ── Replacement banner ── */}
+        {reported && reportedReplacementDate && (
+          <div className="flex items-start gap-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
+            <PackageIcon className="mt-0.5 size-4 shrink-0 text-emerald-500" />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                Replacement on the way
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Arrives {format(reportedReplacementDate, "EEE, MMM d")}. This card has been permanently disabled.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* ── Freeze Toggle ── */}
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
@@ -49,14 +72,15 @@ export function CardControls({
             <p
               className={cn(
                 "text-xs",
-                frozen ? "text-destructive" : "text-muted-foreground",
+                reported ? "text-rose-600" : frozen ? "text-destructive" : "text-muted-foreground",
               )}
             >
-              {frozen ? "Frozen" : "Active"}
+              {reported ? "Reported" : frozen ? "Frozen" : "Active"}
             </p>
           </div>
           <Switch
             checked={frozen}
+            disabled={reported}
             onCheckedChange={(checked) => {
               if (checked !== frozen) onToggleFreeze()
             }}
@@ -129,6 +153,19 @@ export function CardControls({
             </span>
           </div>
         </div>
+
+        {/* ── Report lost/stolen ── */}
+        {!reported && onReportClick && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full gap-1.5 text-rose-600 hover:bg-rose-500/5 hover:text-rose-600"
+            onClick={onReportClick}
+          >
+            <AlertTriangleIcon className="size-3.5" />
+            Report lost or stolen
+          </Button>
+        )}
       </CardContent>
     </Card>
   )

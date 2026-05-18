@@ -26,6 +26,7 @@ import { SpendingLimit } from "@/components/dashboard/spending-limit"
 import { MoneyMovement } from "@/components/dashboard/money-movement"
 import { RecentTransactions } from "@/components/dashboard/recent-transactions"
 import { HealthScore } from "@/components/dashboard/health-score"
+import { KycBanner } from "@/components/dashboard/kyc-banner"
 
 type WidgetSize = "sm" | "lg" | "full"
 
@@ -151,6 +152,8 @@ export function DashboardCustomizer() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+      <KycBanner />
+
       {/* Edit toggle */}
       <div className="flex items-center justify-end gap-2">
         {editing && (

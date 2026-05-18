@@ -672,6 +672,8 @@ export const bankAccounts: BankAccount[] = [
 // PAGE DATA: Transfers
 // ══════════════════════════════════════════════════════════════════════════════
 
+export type TransferFrequency = "one-time" | "weekly" | "bi-weekly" | "monthly"
+
 export type TransferRecord = {
   id: string
   type: "sent" | "received" | "scheduled"
@@ -681,6 +683,7 @@ export type TransferRecord = {
   date: string
   status: "completed" | "pending" | "scheduled"
   note?: string
+  frequency?: TransferFrequency
 }
 
 export const transferRecords: TransferRecord[] = [

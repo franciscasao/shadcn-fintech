@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils"
 import { cryptoCoins } from "@/data/seed"
 import type { CryptoPrices } from "./crypto-page-client"
+import { TradeSettingsDialog } from "@/components/crypto/trade-settings-dialog"
 
 const TABS = ["Exchange", "Trade", "Buy", "Sell"] as const
 
@@ -37,6 +38,7 @@ export function TradeForm({ prices }: TradeFormProps) {
   const [loading, setLoading] = React.useState(false)
   const [success, setSuccess] = React.useState(false)
   const [successDetail, setSuccessDetail] = React.useState("")
+  const [settingsOpen, setSettingsOpen] = React.useState(false)
 
   const isBuyMode = activeTab === "Buy"
   const isSellMode = activeTab === "Sell"
@@ -123,7 +125,12 @@ export function TradeForm({ prices }: TradeFormProps) {
       <CardHeader>
         <CardTitle>Transaction</CardTitle>
         <CardAction>
-          <Button variant="ghost" size="icon-xs">
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Trade settings"
+          >
             <SettingsIcon className="size-4 text-muted-foreground" />
           </Button>
         </CardAction>
@@ -256,6 +263,8 @@ export function TradeForm({ prices }: TradeFormProps) {
           )}
         </AnimatePresence>
       </CardContent>
+
+      <TradeSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </Card>
   )
 }
