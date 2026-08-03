@@ -1,8 +1,8 @@
 "use client"
 
-import Image from "next/image"
 import { AnimatePresence, motion } from "motion/react"
 import { EmptyState } from "@/components/empty-state"
+import { MerchantLogo } from "@/components/merchant-logo"
 import {
   CreditCardIcon,
   FileTextIcon,
@@ -192,14 +192,7 @@ function TransactionRow({
 
         <TableCell>
           <div className="flex items-center gap-2.5">
-            <Image
-              src={tx.logo}
-              alt={tx.merchant}
-              width={32}
-              height={32}
-              className="size-8 rounded-lg object-cover"
-              unoptimized
-            />
+            <MerchantLogo logo={tx.logo} merchant={tx.merchant} size={32} />
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{tx.merchant}</p>
               <Badge variant="secondary" className="mt-0.5 gap-1 text-[10px]">

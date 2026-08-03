@@ -4,6 +4,9 @@ import {
   type TransactionFilters,
 } from "@/server/queries/transactions"
 import { getCategories } from "@/server/queries/categories"
+import { getAccounts } from "@/server/queries/accounts"
+import { LEDGER_ANCHOR } from "@/server/db/generate"
+import { toISODate } from "@/server/db/format"
 import { TransactionsPageClient } from "@/components/transactions/transactions-page-client"
 
 // Reads live data from SQLite on every request — see (dashboard)/layout.tsx.
@@ -29,9 +32,10 @@ export default async function Page({
   const page = Number(first(sp.page)) || 1
   const pageSize = clampPageSize(Number(first(sp.size)) || 25)
 
-  const [transactionsPage, categories] = await Promise.all([
+  const [transactionsPage, categories, accounts] = await Promise.all([
     getTransactionsPage(filters, { page, pageSize }),
     getCategories(),
+    getAccounts(),
   ])
   const categoryNames = categories.map((c) => c.name)
   const categoryMeta = Object.fromEntries(
@@ -44,6 +48,8 @@ export default async function Page({
         transactionsPage={transactionsPage}
         categories={categoryNames}
         categoryMeta={categoryMeta}
+        accounts={accounts}
+        defaultDate={toISODate(LEDGER_ANCHOR)}
         filters={filters}
       />
     </div>

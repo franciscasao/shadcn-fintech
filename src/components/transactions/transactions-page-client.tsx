@@ -4,22 +4,29 @@ import { useState, useTransition } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import type { TransactionFilters, TransactionPage } from "@/server/queries/transactions"
+import type { NewTransactionInput } from "@/server/mutations/transactions"
+import type { BankAccount } from "@/lib/types"
 import { TransactionSummary } from "@/components/transactions/transaction-summary"
 import { TransactionFilters as TransactionFiltersBar } from "@/components/transactions/transaction-filters"
 import { TransactionTable } from "@/components/transactions/transaction-table"
 import { TransactionPagination } from "@/components/transactions/transaction-pagination"
 import { TransactionActions } from "@/components/transactions/transaction-actions"
+import { AddTransactionDialog } from "@/components/transactions/add-transaction-dialog"
 import { cn } from "@/lib/utils"
 
 export function TransactionsPageClient({
   transactionsPage,
   categories,
   categoryMeta,
+  accounts,
+  defaultDate,
   filters,
 }: {
   transactionsPage: TransactionPage
   categories: string[]
   categoryMeta: Record<string, { iconName: string; color: string }>
+  accounts: BankAccount[]
+  defaultDate: string
   filters: TransactionFilters
 }) {
   const router = useRouter()
@@ -29,6 +36,7 @@ export function TransactionsPageClient({
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
 
   // An expanded row can scroll off the page when the page number changes —
   // reset it during render (React's "adjusting state on prop change"
@@ -94,6 +102,19 @@ export function TransactionsPageClient({
     URL.revokeObjectURL(url)
   }
 
+  async function handleAddTransaction(input: NewTransactionInput) {
+    const res = await fetch("/api/transactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => null)
+      throw new Error(body?.error ?? "Couldn't add transaction")
+    }
+    router.refresh()
+  }
+
   return (
     <div
       className={cn(
@@ -113,6 +134,7 @@ export function TransactionsPageClient({
         typeFilter={filters.type ?? "all"}
         setTypeFilter={(v) => setParams({ type: v })}
         categories={categories}
+        onAddTransaction={() => setAddOpen(true)}
       />
 
       <div className={cn("transition-opacity", isPending && "opacity-60")}>
@@ -140,6 +162,15 @@ export function TransactionsPageClient({
         selectedCount={selectedIds.size}
         onExport={handleExport}
         onClear={() => setSelectedIds(new Set())}
+      />
+
+      <AddTransactionDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        categories={categories}
+        accounts={accounts}
+        defaultDate={defaultDate}
+        onAdd={handleAddTransaction}
       />
     </div>
   )

@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { SearchIcon } from "lucide-react"
+import { PlusIcon, SearchIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -24,6 +25,7 @@ interface TransactionFiltersProps {
   typeFilter: string
   setTypeFilter: (v: string) => void
   categories: string[]
+  onAddTransaction: () => void
 }
 
 export function TransactionFilters({
@@ -36,6 +38,7 @@ export function TransactionFilters({
   typeFilter,
   setTypeFilter,
   categories,
+  onAddTransaction,
 }: TransactionFiltersProps) {
   const typeOptions = ["all", "income", "expense"] as const
 
@@ -118,6 +121,11 @@ export function TransactionFilters({
           </button>
         ))}
       </div>
+
+      <Button size="sm" className="gap-1" onClick={onAddTransaction}>
+        <PlusIcon className="size-4" />
+        Add transaction
+      </Button>
     </div>
   )
 }

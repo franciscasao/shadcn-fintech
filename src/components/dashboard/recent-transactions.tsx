@@ -1,4 +1,3 @@
-import Image from "next/image"
 import {
   Card,
   CardContent,
@@ -7,6 +6,7 @@ import {
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { MerchantLogo } from "@/components/merchant-logo"
 import type { Transaction } from "@/lib/types"
 import {
   MoreHorizontalIcon,
@@ -59,14 +59,7 @@ export function RecentTransactions({
               >
                 {/* Merchant */}
                 <div className="flex items-center gap-3">
-                  <Image
-                    src={tx.logo}
-                    alt={tx.merchant}
-                    width={36}
-                    height={36}
-                    className="size-9 shrink-0 rounded-lg object-contain"
-                    unoptimized
-                  />
+                  <MerchantLogo logo={tx.logo} merchant={tx.merchant} size={36} />
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{tx.merchant}</p>
                     <Badge
