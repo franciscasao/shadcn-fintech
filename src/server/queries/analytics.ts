@@ -292,7 +292,7 @@ export async function getSpendingLimitSummary() {
     budget,
     spent,
     remaining: round(budget - spent),
-    currency: "USD",
+    currency: "PHP",
     periodStart: format(monthStart, "MMM dd"),
     periodEnd: format(monthEnd, "MMM dd"),
   }

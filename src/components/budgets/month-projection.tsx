@@ -86,7 +86,7 @@ export function MonthProjection({
               Avg/Day
             </p>
             <p className="text-lg font-bold tabular-nums">
-              ${Math.round(stats.avgDaily)}
+              ₱{Math.round(stats.avgDaily)}
             </p>
           </div>
           <div>
@@ -94,7 +94,7 @@ export function MonthProjection({
               Spent So Far
             </p>
             <p className="text-lg font-bold tabular-nums">
-              ${stats.totalSpent.toLocaleString()}
+              ₱{stats.totalSpent.toLocaleString()}
             </p>
           </div>
           <div>
@@ -107,7 +107,7 @@ export function MonthProjection({
                 stats.overBudget && "text-destructive"
               )}
             >
-              ${Math.round(stats.projected).toLocaleString()}
+              ₱{Math.round(stats.projected).toLocaleString()}
             </p>
           </div>
         </div>
@@ -138,12 +138,12 @@ export function MonthProjection({
               fontSize={10}
               tickMargin={4}
               stroke="var(--color-muted-foreground)"
-              tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+              tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}k`}
             />
             <ChartTooltip
               content={
                 <ChartTooltipContent
-                  formatter={(value) => `$${Number(value).toLocaleString()}`}
+                  formatter={(value) => `₱${Number(value).toLocaleString()}`}
                 />
               }
             />

@@ -56,15 +56,15 @@ export function SavingsGoals({ savingsGoals }: { savingsGoals: SavingsGoal[] }) 
                   </div>
                   <div className="flex items-baseline gap-1">
                     <span className="text-lg font-bold tabular-nums">
-                      ${g.currentAmount.toLocaleString()}
+                      ₱{g.currentAmount.toLocaleString()}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      / ${g.targetAmount.toLocaleString()}
+                      / ₱{g.targetAmount.toLocaleString()}
                     </span>
                   </div>
                   <Progress value={percent} className="h-2" />
                   <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                    <span>${g.monthlyContribution}/mo</span>
+                    <span>₱{g.monthlyContribution}/mo</span>
                     <span>Target: {g.deadline}</span>
                   </div>
                 </div>

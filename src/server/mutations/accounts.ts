@@ -49,7 +49,7 @@ export async function createAccount(input: NewAccountInput): Promise<BankAccount
       institutionLogo: `/logos/${input.institution.toLowerCase().replace(/\s+/g, "")}-com.png`,
       accountNumber: `****${input.accountNumber.slice(-4)}`,
       balance: 0,
-      currency: "$",
+      currency: "₱",
       change: 0,
       changePercent: 0,
       lastActivity: "Just now",

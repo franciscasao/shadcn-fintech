@@ -8,9 +8,9 @@ interface TransactionSummaryProps {
 }
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat("en-US", {
+  new Intl.NumberFormat("en-PH", {
     style: "currency",
-    currency: "USD",
+    currency: "PHP",
     minimumFractionDigits: 2,
   }).format(n)
 
@@ -46,7 +46,7 @@ export function TransactionSummary({ transactions }: TransactionSummaryProps) {
     },
     {
       label: "Largest",
-      value: largest ? fmt(Math.abs(largest.amount)) : "$0.00",
+      value: largest ? fmt(Math.abs(largest.amount)) : "₱0.00",
       icon: TrendingUpIcon,
       color: "text-primary",
       bg: "bg-primary/10",

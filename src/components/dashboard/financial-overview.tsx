@@ -103,14 +103,14 @@ export function FinancialOverview({
               <span className="size-2 rounded-full bg-primary" />
               Current Year{" "}
               <span className="font-medium text-foreground">
-                ${totals.current.toLocaleString()}
+                ₱{totals.current.toLocaleString()}
               </span>
             </span>
             <span className="flex items-center gap-1.5">
               <span className="size-2 rounded-full bg-muted-foreground/40" />
               Last Year{" "}
               <span className="font-medium text-foreground">
-                ${totals.last.toLocaleString()}
+                ₱{totals.last.toLocaleString()}
               </span>
             </span>
           </div>
@@ -191,14 +191,14 @@ export function FinancialOverview({
               fontSize={12}
               tickMargin={8}
               stroke="var(--color-muted-foreground)"
-              tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+              tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}k`}
             />
             <ChartTooltip
               content={
                 <ChartTooltipContent
                   labelFormatter={(label) => label}
                   formatter={(value) =>
-                    `$${Number(value).toLocaleString()}`
+                    `₱${Number(value).toLocaleString()}`
                   }
                 />
               }

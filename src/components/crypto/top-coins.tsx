@@ -98,8 +98,8 @@ export function TopCoins({ prices, originalPrices, selectedCoin, onSelectCoin }:
                   transition={{ duration: 0.6 }}
                   className="rounded px-1 text-xl font-bold tabular-nums"
                 >
-                  $
-                  {livePrice.toLocaleString("en-US", {
+                  ₱
+                  {livePrice.toLocaleString("en-PH", {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}

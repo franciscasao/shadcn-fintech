@@ -97,8 +97,8 @@ export function TradeForm({ prices }: TradeFormProps) {
       setLoading(false)
       setSuccess(true)
 
-      const fromLabel = fromCoin === "usd" ? "USD" : (cryptoCoins.find((c) => c.id === fromCoin)?.symbol ?? fromCoin.toUpperCase())
-      const toLabel = toCoin === "usd" ? "USD" : (cryptoCoins.find((c) => c.id === toCoin)?.symbol ?? toCoin.toUpperCase())
+      const fromLabel = fromCoin === "usd" ? "PHP" : (cryptoCoins.find((c) => c.id === fromCoin)?.symbol ?? fromCoin.toUpperCase())
+      const toLabel = toCoin === "usd" ? "PHP" : (cryptoCoins.find((c) => c.id === toCoin)?.symbol ?? toCoin.toUpperCase())
       setSuccessDetail(`${val} ${fromLabel} -> ${converted} ${toLabel}`)
 
       setTimeout(() => {
@@ -115,8 +115,8 @@ export function TradeForm({ prices }: TradeFormProps) {
     setToCoin(prevFrom)
   }
 
-  const amountLabel = isBuyMode ? "Amount (USD)" : isSellMode ? "Amount (Crypto)" : "Amount"
-  const receivedLabel = isBuyMode ? "You Receive" : isSellMode ? "You Receive (USD)" : "Received"
+  const amountLabel = isBuyMode ? "Amount (PHP)" : isSellMode ? "Amount (Crypto)" : "Amount"
+  const receivedLabel = isBuyMode ? "You Receive" : isSellMode ? "You Receive (PHP)" : "Received"
 
   return (
     <Card className="lg:col-span-4">
@@ -159,7 +159,7 @@ export function TradeForm({ prices }: TradeFormProps) {
               className="h-10 border-0 bg-transparent px-0 text-base font-semibold tabular-nums shadow-none focus-visible:ring-0"
             />
             {isBuyMode ? (
-              <span className="shrink-0 text-sm font-medium text-muted-foreground px-2">USD</span>
+              <span className="shrink-0 text-sm font-medium text-muted-foreground px-2">PHP</span>
             ) : (
               <Select value={fromCoin} onValueChange={(v) => v && setFromCoin(v)} disabled={loading || success}>
                 <SelectTrigger size="sm" className="w-auto shrink-0 border-0 bg-transparent shadow-none">
@@ -200,14 +200,14 @@ export function TradeForm({ prices }: TradeFormProps) {
               {converted}
             </p>
             {isSellMode ? (
-              <span className="shrink-0 text-sm font-medium text-muted-foreground px-2">USD</span>
+              <span className="shrink-0 text-sm font-medium text-muted-foreground px-2">PHP</span>
             ) : (
               <Select value={toCoin} onValueChange={(v) => v && setToCoin(v)} disabled={loading || success}>
                 <SelectTrigger size="sm" className="w-auto shrink-0 border-0 bg-transparent shadow-none">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {!isBuyMode && <SelectItem value="usd">USD</SelectItem>}
+                  {!isBuyMode && <SelectItem value="usd">PHP</SelectItem>}
                   {cryptoCoins.map((coin) => (
                     <SelectItem key={coin.id} value={coin.id}>
                       {coin.symbol}

@@ -78,14 +78,14 @@ export function MonthComparison({
                   <span className="size-2 rounded-full bg-primary" />
                   This Month{" "}
                   <span className="font-medium tabular-nums text-foreground">
-                    ${totals.thisMonth.toLocaleString()}
+                    ₱{totals.thisMonth.toLocaleString()}
                   </span>
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="size-2 rounded-full bg-muted-foreground/30" />
                   Last Month{" "}
                   <span className="font-medium tabular-nums text-foreground">
-                    ${totals.lastMonth.toLocaleString()}
+                    ₱{totals.lastMonth.toLocaleString()}
                   </span>
                 </span>
               </span>
@@ -123,13 +123,13 @@ export function MonthComparison({
               fontSize={11}
               tickMargin={8}
               stroke="var(--color-muted-foreground)"
-              tickFormatter={(v: number) => `$${v}`}
+              tickFormatter={(v: number) => `₱${v}`}
             />
             <ChartTooltip
               content={
                 <ChartTooltipContent
                   formatter={(value) =>
-                    `$${Number(value).toLocaleString()}`
+                    `₱${Number(value).toLocaleString()}`
                   }
                 />
               }

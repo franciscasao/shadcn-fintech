@@ -12,8 +12,8 @@ interface AccountSummaryProps {
   accounts: BankAccount[]
 }
 
-const fmt = (n: number, currency = "$") =>
-  `${currency}${new Intl.NumberFormat("en-US", {
+const fmt = (n: number, currency = "₱") =>
+  `${currency}${new Intl.NumberFormat("en-PH", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Math.abs(n))}`

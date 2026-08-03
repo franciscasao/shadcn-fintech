@@ -211,7 +211,7 @@ export function CoinInsight({ prices, selectedCoin }: CoinInsightProps) {
             "rounded px-2 py-0.5 text-sm font-bold tabular-nums",
             lastIsGrowing ? "text-emerald-500" : "text-rose-500"
           )}>
-            ${livePrice.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ₱{livePrice.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </div>
         <CardAction>

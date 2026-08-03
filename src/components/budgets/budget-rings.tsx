@@ -100,9 +100,9 @@ export function BudgetRings({ budgetCategories }: { budgetCategories: BudgetCate
                 <div className="text-center">
                   <p className="text-xs font-medium">{b.category}</p>
                   <p className="text-xs tabular-nums text-muted-foreground">
-                    ${b.spent.toLocaleString()}{" "}
+                    ₱{b.spent.toLocaleString()}{" "}
                     <span className="text-muted-foreground/60">
-                      / ${b.budget.toLocaleString()}
+                      / ₱{b.budget.toLocaleString()}
                     </span>
                   </p>
                 </div>

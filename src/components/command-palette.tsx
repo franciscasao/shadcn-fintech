@@ -110,7 +110,7 @@ export function CommandPalette({
                 <SearchIcon className="mr-2 size-4" />
                 {tx.merchant}
                 <span className="ml-auto text-xs tabular-nums text-muted-foreground">
-                  {tx.amount > 0 ? "+" : ""}${Math.abs(tx.amount).toFixed(2)}
+                  {tx.amount > 0 ? "+" : ""}₱{Math.abs(tx.amount).toFixed(2)}
                 </span>
               </CommandItem>
             ))}
@@ -135,7 +135,7 @@ export function CommandPalette({
                 <BitcoinIcon className="mr-2 size-4" />
                 {coin.name}
                 <span className="ml-auto text-xs tabular-nums text-muted-foreground">
-                  ${coin.price.toLocaleString()}
+                  ₱{coin.price.toLocaleString()}
                 </span>
               </CommandItem>
             ))}

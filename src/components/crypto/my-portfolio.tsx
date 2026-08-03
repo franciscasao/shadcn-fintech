@@ -136,8 +136,8 @@ export function MyPortfolio({ prices, originalPrices, selectedCoin, onSelectCoin
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-semibold tabular-nums">
-                    $
-                    {seg.value.toLocaleString("en-US", {
+                    ₱
+                    {seg.value.toLocaleString("en-PH", {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}

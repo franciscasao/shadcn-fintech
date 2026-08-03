@@ -78,7 +78,7 @@ export function MoneyMovement({
             <div>
               <p className="text-[10px] font-medium text-emerald-600/70 dark:text-emerald-400/70">Money In</p>
               <p className="text-sm font-bold tabular-nums text-emerald-700 dark:text-emerald-300">
-                ${totals.in.toLocaleString()}
+                ₱{totals.in.toLocaleString()}
               </p>
             </div>
           </div>
@@ -89,7 +89,7 @@ export function MoneyMovement({
             <div>
               <p className="text-[10px] font-medium text-rose-600/70 dark:text-rose-400/70">Money Out</p>
               <p className="text-sm font-bold tabular-nums text-rose-700 dark:text-rose-300">
-                ${totals.out.toLocaleString()}
+                ₱{totals.out.toLocaleString()}
               </p>
             </div>
           </div>
@@ -99,7 +99,7 @@ export function MoneyMovement({
         <div className="flex items-center justify-between rounded-lg border px-3 py-2">
           <span className="text-xs text-muted-foreground">Net Flow</span>
           <span className="text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-            +${totals.net.toLocaleString()}
+            +₱{totals.net.toLocaleString()}
           </span>
         </div>
 
@@ -130,13 +130,13 @@ export function MoneyMovement({
               fontSize={11}
               tickMargin={4}
               stroke="var(--color-muted-foreground)"
-              tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+              tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}k`}
             />
             <ChartTooltip
               content={
                 <ChartTooltipContent
                   formatter={(value) =>
-                    `$${Number(value).toLocaleString()}`
+                    `₱${Number(value).toLocaleString()}`
                   }
                 />
               }

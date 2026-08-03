@@ -81,7 +81,7 @@ export function SpendingCalendar({ dailySpending }: { dailySpending: DailySpendi
                     <span className="text-[11px] font-medium">{cell.day}</span>
                     {cell.amount > 0 && (
                       <span className="hidden text-[9px] tabular-nums text-muted-foreground sm:inline">
-                        ${cell.amount}
+                        ₱{cell.amount}
                       </span>
                     )}
                   </div>

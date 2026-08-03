@@ -232,8 +232,8 @@ export function MarketOverview({ prices, originalPrices, selectedCoin, onSelectC
                       transition={{ duration: 0.6 }}
                       className="rounded px-1"
                     >
-                      $
-                      {coin.livePrice.toLocaleString("en-US", {
+                      ₱
+                      {coin.livePrice.toLocaleString("en-PH", {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}

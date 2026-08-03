@@ -95,8 +95,8 @@ export function RecentTransactions({
                       : "text-foreground"
                   )}
                 >
-                  {tx.amount > 0 ? "+" : ""}$
-                  {Math.abs(tx.amount).toLocaleString("en-US", {
+                  {tx.amount > 0 ? "+" : ""}₱
+                  {Math.abs(tx.amount).toLocaleString("en-PH", {
                     minimumFractionDigits: 2,
                   })}
                 </span>

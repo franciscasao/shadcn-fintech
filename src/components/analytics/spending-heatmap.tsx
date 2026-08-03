@@ -85,7 +85,7 @@ export function SpendingHeatmap({
             <CardTitle>Spending Activity</CardTitle>
             <CardDescription>
               <span className="tabular-nums font-medium text-foreground">
-                ${yearTotal.toLocaleString()}
+                ₱{yearTotal.toLocaleString()}
               </span>{" "}
               total spent this year
             </CardDescription>
@@ -153,7 +153,7 @@ export function SpendingHeatmap({
                   />
                   <TooltipContent>
                     <span className="tabular-nums">
-                      ${cell.amount.toLocaleString()}
+                      ₱{cell.amount.toLocaleString()}
                     </span>{" "}
                     on{" "}
                     {new Date(cell.date + "T12:00:00").toLocaleDateString(

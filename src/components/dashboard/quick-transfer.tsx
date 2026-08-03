@@ -135,7 +135,7 @@ export function QuickTransfer({ contacts }: { contacts: Contact[] }) {
                 <CheckCircle2Icon className="size-10 text-emerald-500" />
               </motion.div>
               <p className="text-sm font-semibold">
-                ${parseFloat(amount).toLocaleString("en-US", { minimumFractionDigits: 2 })} sent!
+                ₱{parseFloat(amount).toLocaleString("en-PH", { minimumFractionDigits: 2 })} sent!
               </p>
               <p className="text-xs text-muted-foreground">
                 To {selected?.name}
@@ -153,7 +153,7 @@ export function QuickTransfer({ contacts }: { contacts: Contact[] }) {
                 <label className="text-xs text-muted-foreground">Amount</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted-foreground">
-                    $
+                    ₱
                   </span>
                   <Input
                     type="text"

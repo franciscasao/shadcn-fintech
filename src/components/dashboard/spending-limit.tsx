@@ -27,7 +27,7 @@ export function SpendingLimit({ spendingLimit }: { spendingLimit: SpendingLimitS
         <div>
           <p className="text-xs text-muted-foreground">Budget</p>
           <p className="text-2xl font-bold tabular-nums tracking-tight">
-            ${spendingLimit.budget.toLocaleString()}{" "}
+            ₱{spendingLimit.budget.toLocaleString()}{" "}
             <span className="text-sm font-normal text-muted-foreground">
               {spendingLimit.currency}
             </span>
@@ -40,13 +40,13 @@ export function SpendingLimit({ spendingLimit }: { spendingLimit: SpendingLimitS
           <div>
             <p className="text-xs text-muted-foreground">Spend</p>
             <p className="font-semibold tabular-nums">
-              ${spendingLimit.spent.toLocaleString()}
+              ₱{spendingLimit.spent.toLocaleString()}
             </p>
           </div>
           <div className="text-right">
             <p className="text-xs text-muted-foreground">Remaining</p>
             <p className="font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-              ${spendingLimit.remaining.toLocaleString()}
+              ₱{spendingLimit.remaining.toLocaleString()}
             </p>
           </div>
         </div>

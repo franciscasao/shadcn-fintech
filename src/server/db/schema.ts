@@ -41,7 +41,7 @@ export const accounts = sqliteTable("accounts", {
   institutionLogo: text("institution_logo").notNull(),
   accountNumber: text("account_number").notNull(),
   balance: real("balance").notNull().default(0),
-  currency: text("currency").notNull().default("$"),
+  currency: text("currency").notNull().default("₱"),
   change: real("change").notNull().default(0),
   changePercent: real("change_percent").notNull().default(0),
   lastActivity: text("last_activity").notNull(),
