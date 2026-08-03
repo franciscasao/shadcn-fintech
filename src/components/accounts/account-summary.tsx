@@ -3,10 +3,12 @@ import {
   TrendingUpIcon,
   TrendingDownIcon,
   LinkIcon,
+  PiggyBankIcon,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import type { BankAccount } from "@/data/seed"
+import { estimateMonthlyInterest } from "@/lib/interest"
+import type { BankAccount } from "@/lib/types"
 
 interface AccountSummaryProps {
   accounts: BankAccount[]
@@ -22,6 +24,10 @@ export function AccountSummary({ accounts }: AccountSummaryProps) {
   const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0)
   const totalChange = accounts.reduce((sum, a) => sum + a.change, 0)
   const isPositive = totalChange >= 0
+  const estMonthlyInterest = accounts.reduce(
+    (sum, a) => sum + estimateMonthlyInterest(a.balance, a.interestRate, a.interestCap),
+    0
+  )
 
   const cards = [
     {
@@ -45,10 +51,17 @@ export function AccountSummary({ accounts }: AccountSummaryProps) {
       color: "text-muted-foreground",
       bg: "bg-muted",
     },
+    {
+      label: "Est. Monthly Interest",
+      value: fmt(estMonthlyInterest),
+      icon: PiggyBankIcon,
+      color: "text-emerald-500",
+      bg: "bg-emerald-500/10",
+    },
   ]
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {cards.map((card) => (
         <div
           key={card.label}

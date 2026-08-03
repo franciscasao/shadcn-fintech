@@ -4,7 +4,8 @@ import { DEMO_USER_ID, getDb } from "@/server/db"
 import { accounts } from "@/server/db/schema"
 import type { BankAccount } from "@/lib/types"
 
-function toBankAccount(row: typeof accounts.$inferSelect): BankAccount {
+/** Shared row -> API-shape mapper, also used by @/server/mutations/accounts. */
+export function toBankAccount(row: typeof accounts.$inferSelect): BankAccount {
   return {
     id: String(row.id),
     name: row.name,
@@ -18,6 +19,21 @@ function toBankAccount(row: typeof accounts.$inferSelect): BankAccount {
     changePercent: row.changePercent,
     lastActivity: row.lastActivity,
     color: row.color,
+    templateId: row.templateId,
+    institutionKind: row.institutionKind,
+    pdicInsured: row.pdicInsured,
+    interestRate: row.interestRate,
+    creditingFrequency: row.creditingFrequency,
+    creditingTiming: row.creditingTiming,
+    compounding: row.compounding,
+    maintainingBalance: row.maintainingBalance,
+    requiredAdb: row.requiredAdb,
+    interestCap: row.interestCap,
+    monthlyFee: row.monthlyFee,
+    freeTransfersPerMonth: row.freeTransfersPerMonth,
+    instapayFee: row.instapayFee,
+    pesonetFee: row.pesonetFee,
+    dailyTransferLimit: row.dailyTransferLimit,
   }
 }
 

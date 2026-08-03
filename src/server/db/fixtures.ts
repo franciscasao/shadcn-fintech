@@ -1,4 +1,5 @@
 import { avatar, logo } from "@/lib/media"
+import { getInstitution } from "@/lib/ph-institutions"
 import type {
   BankAccount,
   CardData,
@@ -29,85 +30,106 @@ export const contactFixtures = [
 ]
 
 // ── Bank accounts ────────────────────────────────────────────────────────────
+// Product fields (interest rate, crediting schedule, PDIC status, fees...)
+// are pulled from the PH institution registry (@/lib/ph-institutions) so the
+// seed data and the "link an account" templates never drift apart. Only the
+// per-account numbers (balance, masked account number, display name) are
+// hand-authored here.
+type AccountFixtureOverrides = {
+  name: string
+  accountNumber: string
+  balance: number
+  change: number
+  changePercent: number
+  lastActivity: string
+  type?: BankAccount["type"]
+}
+
+function fromTemplate(
+  templateId: string,
+  overrides: AccountFixtureOverrides
+): Omit<BankAccount, "id"> {
+  const t = getInstitution(templateId)
+  if (!t) throw new Error(`Unknown institution template: ${templateId}`)
+  return {
+    name: overrides.name,
+    type: overrides.type ?? t.defaultType,
+    institution: t.name,
+    institutionLogo: t.logo,
+    accountNumber: overrides.accountNumber,
+    balance: overrides.balance,
+    currency: "₱",
+    change: overrides.change,
+    changePercent: overrides.changePercent,
+    lastActivity: overrides.lastActivity,
+    color: t.color,
+    templateId: t.id,
+    institutionKind: t.kind,
+    pdicInsured: t.pdicInsured,
+    interestRate: t.interestRate ?? null,
+    creditingFrequency: t.creditingFrequency,
+    creditingTiming: t.creditingTiming ?? null,
+    compounding: t.compounding,
+    maintainingBalance: t.maintainingBalance ?? null,
+    requiredAdb: t.requiredAdb ?? null,
+    interestCap: t.interestCap ?? null,
+    monthlyFee: t.monthlyFee ?? null,
+    freeTransfersPerMonth: t.freeTransfersPerMonth ?? null,
+    instapayFee: t.instapayFee ?? null,
+    pesonetFee: t.pesonetFee ?? null,
+    dailyTransferLimit: t.dailyTransferLimit ?? null,
+  }
+}
+
 export const accountFixtures: Omit<BankAccount, "id">[] = [
-  {
+  fromTemplate("bpi", {
     name: "Primary Checking",
-    type: "checking",
-    institution: "Chase",
-    institutionLogo: logo("chase.com"),
     accountNumber: "****4589",
     balance: 24850.42,
-    currency: "₱",
     change: 1240.0,
     changePercent: 5.2,
     lastActivity: "Today",
-    color: "bg-blue-500",
-  },
-  {
-    name: "High-Yield Savings",
-    type: "savings",
-    institution: "Marcus by Goldman Sachs",
-    institutionLogo: logo("marcus.com"),
+  }),
+  fromTemplate("seabank-ph", {
+    name: "SeaBank Savings",
     accountNumber: "****7821",
     balance: 35200.0,
-    currency: "₱",
     change: 880.5,
     changePercent: 2.6,
     lastActivity: "Yesterday",
-    color: "bg-emerald-500",
-  },
-  {
-    name: "Bitcoin Wallet",
-    type: "crypto",
-    institution: "Coinbase",
-    institutionLogo: logo("coinbase.com"),
+  }),
+  fromTemplate("coins-ph", {
+    name: "Crypto Wallet",
     accountNumber: "****3bc9",
     balance: 18450.8,
-    currency: "₱",
     change: -620.3,
     changePercent: -3.2,
     lastActivity: "2 hours ago",
-    color: "bg-orange-500",
-  },
-  {
+  }),
+  fromTemplate("col-financial", {
     name: "Brokerage Account",
-    type: "investment",
-    institution: "Fidelity",
-    institutionLogo: logo("fidelity.com"),
     accountNumber: "****9012",
     balance: 61450.0,
-    currency: "₱",
     change: 2840.0,
     changePercent: 4.8,
     lastActivity: "Today",
-    color: "bg-violet-500",
-  },
-  {
+  }),
+  fromTemplate("maya-bank", {
     name: "Travel Fund",
-    type: "savings",
-    institution: "Ally Bank",
-    institutionLogo: logo("ally.com"),
     accountNumber: "****5567",
     balance: 4200.0,
-    currency: "₱",
     change: 400.0,
     changePercent: 10.5,
     lastActivity: "3 days ago",
-    color: "bg-pink-500",
-  },
-  {
-    name: "Wise Account",
-    type: "checking",
-    institution: "Wise",
-    institutionLogo: logo("wise.com"),
+  }),
+  fromTemplate("gcash", {
+    name: "GCash Wallet",
     accountNumber: "****8834",
     balance: 8750.0,
-    currency: "₱",
     change: 320.0,
     changePercent: 3.8,
     lastActivity: "Today",
-    color: "bg-cyan-500",
-  },
+  }),
 ]
 
 // ── Cards ────────────────────────────────────────────────────────────────────

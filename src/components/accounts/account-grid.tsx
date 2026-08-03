@@ -2,11 +2,19 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import { TrendingUpIcon, TrendingDownIcon, ClockIcon, BuildingIcon } from "lucide-react"
+import {
+  TrendingUpIcon,
+  TrendingDownIcon,
+  ClockIcon,
+  BuildingIcon,
+  ShieldCheckIcon,
+  ShieldOffIcon,
+} from "lucide-react"
 import { motion } from "motion/react"
 
 import { cn } from "@/lib/utils"
-import type { BankAccount } from "@/data/seed"
+import { creditingLabel, formatRate } from "@/lib/interest"
+import type { BankAccount } from "@/lib/types"
 
 interface AccountCardProps {
   account: BankAccount
@@ -77,6 +85,31 @@ export function AccountCard({ account, index, onSelect }: AccountCardProps) {
         <p className="mt-3 tabular-nums text-xl font-bold tracking-tight">
           {fmt(account.balance, account.currency)}
         </p>
+
+        {/* Interest & deposit insurance */}
+        {(account.interestRate != null || account.creditingFrequency !== "none") && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            {formatRate(account.interestRate)} ·{" "}
+            {creditingLabel(account.creditingFrequency, account.creditingTiming)}
+          </p>
+        )}
+        {account.templateId && (
+          <span
+            className={cn(
+              "mt-1.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
+              account.pdicInsured
+                ? "bg-emerald-500/10 text-emerald-500"
+                : "bg-muted text-muted-foreground"
+            )}
+          >
+            {account.pdicInsured ? (
+              <ShieldCheckIcon className="size-3" />
+            ) : (
+              <ShieldOffIcon className="size-3" />
+            )}
+            {account.pdicInsured ? "PDIC insured" : "Not insured"}
+          </span>
+        )}
 
         {/* Change badge + last activity */}
         <div className="mt-2 flex items-center justify-between">

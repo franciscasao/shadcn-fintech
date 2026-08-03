@@ -47,6 +47,40 @@ export const accounts = sqliteTable("accounts", {
   lastActivity: text("last_activity").notNull(),
   color: text("color").notNull(),
   createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),
+
+  // ── PH institution template fields (see @/lib/ph-institutions) ──────────
+  // templateId is null for accounts created via the "custom institution"
+  // escape hatch — everything below is then user-entered instead of
+  // template-derived.
+  templateId: text("template_id"),
+  institutionKind: text("institution_kind", {
+    enum: ["universal", "commercial", "thrift", "rural", "digital", "ewallet", "broker", "crypto"],
+  }),
+  pdicInsured: integer("pdic_insured", { mode: "boolean" }).notNull().default(false),
+
+  // interest
+  interestRate: real("interest_rate"),
+  creditingFrequency: text("crediting_frequency", {
+    enum: ["daily", "monthly", "quarterly", "maturity", "none"],
+  })
+    .notNull()
+    .default("none"),
+  creditingTiming: text("crediting_timing", {
+    enum: ["start_of_day", "end_of_day", "month_end", "maturity"],
+  }),
+  compounding: integer("compounding", { mode: "boolean" }).notNull().default(false),
+
+  // balance rules
+  maintainingBalance: real("maintaining_balance"),
+  requiredAdb: real("required_adb"),
+  interestCap: real("interest_cap"),
+
+  // fees & limits
+  monthlyFee: real("monthly_fee"),
+  freeTransfersPerMonth: integer("free_transfers_per_month"),
+  instapayFee: real("instapay_fee"),
+  pesonetFee: real("pesonet_fee"),
+  dailyTransferLimit: real("daily_transfer_limit"),
 })
 
 // ── Cards ────────────────────────────────────────────────────────────────────

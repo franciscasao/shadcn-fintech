@@ -155,6 +155,22 @@ export type SpendingLimitSummary = {
 }
 
 // ── Accounts page ────────────────────────────────────────────────────────────
+// Shared with @/lib/ph-institutions (the PH bank/e-wallet template registry).
+// Defined here, not there, so BankAccount can reference them without a
+// types.ts <-> ph-institutions.ts import cycle.
+export type InstitutionKind =
+  | "universal"
+  | "commercial"
+  | "thrift"
+  | "rural"
+  | "digital"
+  | "ewallet"
+  | "broker"
+  | "crypto"
+
+export type CreditingFrequency = "daily" | "monthly" | "quarterly" | "maturity" | "none"
+export type CreditingTiming = "start_of_day" | "end_of_day" | "month_end" | "maturity"
+
 export type BankAccount = {
   id: string
   name: string
@@ -168,6 +184,25 @@ export type BankAccount = {
   changePercent: number
   lastActivity: string
   color: string
+  // PH institution template this account was created from, if any
+  templateId: string | null
+  institutionKind: InstitutionKind | null
+  pdicInsured: boolean
+  // interest
+  interestRate: number | null
+  creditingFrequency: CreditingFrequency
+  creditingTiming: CreditingTiming | null
+  compounding: boolean
+  // balance rules
+  maintainingBalance: number | null
+  requiredAdb: number | null
+  interestCap: number | null
+  // fees & limits
+  monthlyFee: number | null
+  freeTransfersPerMonth: number | null
+  instapayFee: number | null
+  pesonetFee: number | null
+  dailyTransferLimit: number | null
 }
 
 // ── Transfers page ───────────────────────────────────────────────────────────
