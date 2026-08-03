@@ -26,6 +26,10 @@ import {
 
 interface TransactionTableProps {
   transactions: FullTransaction[]
+  /** Ids of every row matching the current filters, across all pages — lets
+   * "select all" operate on the full filtered set rather than just the
+   * visible page. */
+  filteredIds: string[]
   selectedIds: Set<string>
   setSelectedIds: (ids: Set<string>) => void
   expandedId: string | null
@@ -56,22 +60,25 @@ function statusBadge(status: FullTransaction["status"]) {
 
 export function TransactionTable({
   transactions,
+  filteredIds,
   selectedIds,
   setSelectedIds,
   expandedId,
   setExpandedId,
 }: TransactionTableProps) {
   const allSelected =
-    transactions.length > 0 && transactions.every((t) => selectedIds.has(t.id))
+    filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id))
 
   const someSelected =
-    transactions.some((t) => selectedIds.has(t.id)) && !allSelected
+    filteredIds.some((id) => selectedIds.has(id)) && !allSelected
 
   function toggleAll() {
     if (allSelected) {
-      setSelectedIds(new Set())
+      const next = new Set(selectedIds)
+      for (const id of filteredIds) next.delete(id)
+      setSelectedIds(next)
     } else {
-      setSelectedIds(new Set(transactions.map((t) => t.id)))
+      setSelectedIds(new Set([...selectedIds, ...filteredIds]))
     }
   }
 

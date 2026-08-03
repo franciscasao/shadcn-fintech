@@ -1,60 +1,82 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useState, useTransition } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
-import type { FullTransaction } from "@/lib/types"
+import type { TransactionFilters, TransactionPage } from "@/server/queries/transactions"
 import { TransactionSummary } from "@/components/transactions/transaction-summary"
-import { TransactionFilters } from "@/components/transactions/transaction-filters"
+import { TransactionFilters as TransactionFiltersBar } from "@/components/transactions/transaction-filters"
 import { TransactionTable } from "@/components/transactions/transaction-table"
+import { TransactionPagination } from "@/components/transactions/transaction-pagination"
 import { TransactionActions } from "@/components/transactions/transaction-actions"
+import { cn } from "@/lib/utils"
 
 export function TransactionsPageClient({
-  initialTransactions,
+  transactionsPage,
+  categories,
+  filters,
 }: {
-  initialTransactions: FullTransaction[]
+  transactionsPage: TransactionPage
+  categories: string[]
+  filters: TransactionFilters
 }) {
-  const [search, setSearch] = useState("")
-  const [categoryFilter, setCategoryFilter] = useState("all")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [typeFilter, setTypeFilter] = useState("all")
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const [isPending, startTransition] = useTransition()
+
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
-  const categories = useMemo(() => {
-    const cats = new Set(initialTransactions.map((t) => t.category))
-    return Array.from(cats).sort()
-  }, [initialTransactions])
+  // An expanded row can scroll off the page when the page number changes —
+  // reset it during render (React's "adjusting state on prop change"
+  // pattern) rather than in an effect, to avoid an extra cascading render.
+  const [lastSeenPage, setLastSeenPage] = useState(transactionsPage.page)
+  if (transactionsPage.page !== lastSeenPage) {
+    setLastSeenPage(transactionsPage.page)
+    setExpandedId(null)
+  }
 
-  const filteredData = useMemo(() => {
-    let data: FullTransaction[] = initialTransactions
-
-    if (search) {
-      const q = search.toLowerCase()
-      data = data.filter(
-        (t) =>
-          t.merchant.toLowerCase().includes(q) ||
-          t.transactionId.toLowerCase().includes(q) ||
-          t.category.toLowerCase().includes(q)
-      )
+  function setParams(patch: Record<string, string | undefined>) {
+    const next = new URLSearchParams(searchParams.toString())
+    for (const [key, value] of Object.entries(patch)) {
+      const isDefault =
+        !value ||
+        value === "all" ||
+        (key === "page" && value === "1") ||
+        (key === "size" && value === "25")
+      if (isDefault) next.delete(key)
+      else next.set(key, value)
     }
+    // Any filter change resets paging — otherwise you can filter down to a
+    // handful of results while sitting on page 7 and see an empty table.
+    if (!("page" in patch)) next.delete("page")
 
-    if (categoryFilter !== "all") {
-      data = data.filter((t) => t.category === categoryFilter)
-    }
+    const query = next.toString()
+    startTransition(() => {
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+    })
+  }
 
-    if (statusFilter !== "all") {
-      data = data.filter((t) => t.status === statusFilter)
-    }
+  async function handleExport() {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0) return
 
-    if (typeFilter !== "all") {
-      data = data.filter((t) => t.type === typeFilter)
-    }
+    const res = await fetch("/api/transactions/export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    })
+    if (!res.ok) return
+    const selected: Array<{
+      merchant: string
+      transactionId: string
+      amount: number
+      date: string
+      status: string
+      type: string
+    }> = await res.json()
 
-    return data
-  }, [initialTransactions, search, categoryFilter, statusFilter, typeFilter])
-
-  function handleExport() {
-    const selected = initialTransactions.filter((t) => selectedIds.has(t.id))
     const header = "Merchant,Transaction ID,Amount,Date,Status,Type"
     const rows = selected.map(
       (t) =>
@@ -71,28 +93,45 @@ export function TransactionsPageClient({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <TransactionSummary transactions={filteredData} />
+    <div
+      className={cn(
+        "flex flex-col gap-4",
+        selectedIds.size > 0 && "pb-16"
+      )}
+    >
+      <TransactionSummary stats={transactionsPage.stats} />
 
-      <TransactionFilters
-        search={search}
-        setSearch={setSearch}
-        categoryFilter={categoryFilter}
-        setCategoryFilter={setCategoryFilter}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-        typeFilter={typeFilter}
-        setTypeFilter={setTypeFilter}
+      <TransactionFiltersBar
+        search={filters.search ?? ""}
+        setSearch={(v) => setParams({ q: v })}
+        categoryFilter={filters.category ?? "all"}
+        setCategoryFilter={(v) => setParams({ category: v })}
+        statusFilter={filters.status ?? "all"}
+        setStatusFilter={(v) => setParams({ status: v })}
+        typeFilter={filters.type ?? "all"}
+        setTypeFilter={(v) => setParams({ type: v })}
         categories={categories}
       />
 
-      <TransactionTable
-        transactions={filteredData}
-        selectedIds={selectedIds}
-        setSelectedIds={setSelectedIds}
-        expandedId={expandedId}
-        setExpandedId={setExpandedId}
-      />
+      <div className={cn("transition-opacity", isPending && "opacity-60")}>
+        <TransactionTable
+          transactions={transactionsPage.rows}
+          filteredIds={transactionsPage.filteredIds}
+          selectedIds={selectedIds}
+          setSelectedIds={setSelectedIds}
+          expandedId={expandedId}
+          setExpandedId={setExpandedId}
+        />
+
+        <TransactionPagination
+          page={transactionsPage.page}
+          pageSize={transactionsPage.pageSize}
+          totalPages={transactionsPage.totalPages}
+          totalCount={transactionsPage.stats.count}
+          onPageChange={(page) => setParams({ page: String(page) })}
+          onPageSizeChange={(size) => setParams({ size: String(size), page: "1" })}
+        />
+      </div>
 
       <TransactionActions
         selectedCount={selectedIds.size}

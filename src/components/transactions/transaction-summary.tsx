@@ -1,10 +1,10 @@
 import { ArrowDownLeftIcon, ArrowUpRightIcon, HashIcon, TrendingUpIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import type { FullTransaction } from "@/data/seed"
+import type { TransactionStats } from "@/server/queries/transactions"
 
 interface TransactionSummaryProps {
-  transactions: FullTransaction[]
+  stats: TransactionStats
 }
 
 const fmt = (n: number) =>
@@ -14,20 +14,8 @@ const fmt = (n: number) =>
     minimumFractionDigits: 2,
   }).format(n)
 
-export function TransactionSummary({ transactions }: TransactionSummaryProps) {
-  const totalIn = transactions
-    .filter((t) => t.type === "income")
-    .reduce((s, t) => s + t.amount, 0)
-
-  const totalOut = transactions
-    .filter((t) => t.type === "expense")
-    .reduce((s, t) => s + Math.abs(t.amount), 0)
-
-  const largest = transactions.length
-    ? transactions.reduce((max, t) =>
-        Math.abs(t.amount) > Math.abs(max.amount) ? t : max
-      )
-    : null
+export function TransactionSummary({ stats }: TransactionSummaryProps) {
+  const { totalIn, totalOut, largest, count } = stats
 
   const cards = [
     {
@@ -46,14 +34,14 @@ export function TransactionSummary({ transactions }: TransactionSummaryProps) {
     },
     {
       label: "Largest",
-      value: largest ? fmt(Math.abs(largest.amount)) : "₱0.00",
+      value: fmt(largest),
       icon: TrendingUpIcon,
       color: "text-primary",
       bg: "bg-primary/10",
     },
     {
       label: "Count",
-      value: transactions.length.toString(),
+      value: count.toString(),
       icon: HashIcon,
       color: "text-muted-foreground",
       bg: "bg-muted",

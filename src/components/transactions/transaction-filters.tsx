@@ -1,8 +1,10 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { SearchIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useDebouncedValue } from "@/hooks/use-debounced-value"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -37,6 +39,21 @@ export function TransactionFilters({
 }: TransactionFiltersProps) {
   const typeOptions = ["all", "income", "expense"] as const
 
+  // Local state keeps the input's caret responsive on every keystroke; the
+  // debounced value is what actually drives the (server-round-trip) search,
+  // committed to the URL by the parent.
+  const [localSearch, setLocalSearch] = useState(search)
+  const debouncedSearch = useDebouncedValue(localSearch, 300)
+
+  useEffect(() => {
+    setLocalSearch(search)
+  }, [search])
+
+  useEffect(() => {
+    if (debouncedSearch !== search) setSearch(debouncedSearch)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch])
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       {/* Search */}
@@ -44,8 +61,8 @@ export function TransactionFilters({
         <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search transactions..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={localSearch}
+          onChange={(e) => setLocalSearch(e.target.value)}
           className="pl-8"
         />
       </div>
