@@ -1,35 +1,31 @@
 "use client"
 
+import { useRouter } from "next/navigation"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { BudgetCategory } from "@/lib/types"
 import { motion } from "motion/react"
-import {
-  UtensilsIcon,
-  CarIcon,
-  Gamepad2Icon,
-  ShoppingBagIcon,
-  RepeatIcon,
-  HeartPulseIcon,
-  GraduationCapIcon,
-  PlaneIcon,
-} from "lucide-react"
+import { WalletIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-const iconMap: Record<string, React.ReactNode> = {
-  utensils: <UtensilsIcon className="size-5" />,
-  car: <CarIcon className="size-5" />,
-  "gamepad-2": <Gamepad2Icon className="size-5" />,
-  "shopping-bag": <ShoppingBagIcon className="size-5" />,
-  repeat: <RepeatIcon className="size-5" />,
-  "heart-pulse": <HeartPulseIcon className="size-5" />,
-  "graduation-cap": <GraduationCapIcon className="size-5" />,
-  plane: <PlaneIcon className="size-5" />,
-}
+import { budgetIconMap } from "@/components/budgets/budget-icons"
+import { AddBudget, type NewBudgetInput } from "@/components/budgets/add-budget"
 
 const RADIUS = 40
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
 export function BudgetRings({ budgetCategories }: { budgetCategories: BudgetCategory[] }) {
+  const router = useRouter()
+
+  async function handleAddBudget(input: NewBudgetInput) {
+    const res = await fetch("/api/budgets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    })
+    if (!res.ok) throw new Error("Failed to add budget")
+    router.refresh()
+  }
+
   return (
     <Card className="col-span-full">
       <CardHeader>
@@ -40,7 +36,7 @@ export function BudgetRings({ budgetCategories }: { budgetCategories: BudgetCate
       <CardContent>
         <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
           {budgetCategories.map((b, i) => {
-            const percent = Math.min((b.spent / b.budget) * 100, 100)
+            const percent = b.budget > 0 ? Math.min((b.spent / b.budget) * 100, 100) : 0
             const offset = CIRCUMFERENCE - (percent / 100) * CIRCUMFERENCE
             const isOver = b.spent > b.budget
 
@@ -98,7 +94,7 @@ export function BudgetRings({ budgetCategories }: { budgetCategories: BudgetCate
                       isOver ? "text-destructive" : b.color
                     )}
                   >
-                    {iconMap[b.iconName]}
+                    {budgetIconMap[b.iconName] ?? <WalletIcon className="size-5" />}
                   </div>
                 </div>
                 <div className="text-center">
@@ -113,6 +109,7 @@ export function BudgetRings({ budgetCategories }: { budgetCategories: BudgetCate
               </div>
             )
           })}
+          <AddBudget onAdd={handleAddBudget} />
         </div>
       </CardContent>
     </Card>
