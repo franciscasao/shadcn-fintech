@@ -152,6 +152,20 @@ export const notifications = sqliteTable("notifications", {
   createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),
 })
 
+// ── Categories (user-managed; transactions.category stores the name as free
+// text, kept in sync on rename via the mutation layer — see
+// src/server/mutations/categories.ts) ───────────────────────────────────────
+export const categories = sqliteTable("categories", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  iconName: text("icon_name").notNull(),
+  color: text("color").notNull(),
+  // Which of the 8 analytics/budget buckets this category rolls up into.
+  // Null excludes it from spending aggregates (as "Income" is today).
+  budgetBucket: text("budget_bucket"),
+})
+
 // ── Budget categories ────────────────────────────────────────────────────────
 export const budgetCategories = sqliteTable("budget_categories", {
   id: integer("id").primaryKey({ autoIncrement: true }),

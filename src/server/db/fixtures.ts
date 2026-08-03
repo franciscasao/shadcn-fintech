@@ -1,5 +1,7 @@
 import { avatar, logo } from "@/lib/media"
 import { getInstitution } from "@/lib/ph-institutions"
+import { CATEGORY_TO_BUDGET_BUCKET } from "@/server/db/generate"
+import { ICON_COLORS } from "@/server/icon-colors"
 import type {
   BankAccount,
   CardData,
@@ -226,6 +228,31 @@ export const notificationFixtures: Omit<Notification, "id">[] = [
   { type: "system", title: "Monthly Statement Ready", description: "Your March 2026 account statement is available for download", time: "1 week ago", read: true, icon: "file-text" },
   { type: "security", title: "Two-Factor Enabled", description: "Two-factor authentication has been enabled on your account", time: "2 weeks ago", read: true, icon: "shield-check" },
 ]
+
+// ── Transaction categories (the 12 categories used across curatedTransaction
+// Fixtures and the generated ledger, see generate.ts) — the user-managed
+// entity backing the Categories settings tab. budgetBucket mirrors
+// CATEGORY_TO_BUDGET_BUCKET so seeded categories roll up into the same
+// analytics buckets the app already shows; "Income" has none, matching its
+// exclusion from spending aggregates.
+export const categoryFixtures = [
+  { name: "Food & Dining", iconName: "utensils" },
+  { name: "Transport", iconName: "car" },
+  { name: "Entertainment", iconName: "gamepad-2" },
+  { name: "Shopping", iconName: "shopping-bag" },
+  { name: "Health", iconName: "heart-pulse" },
+  { name: "Education", iconName: "graduation-cap" },
+  { name: "Travel", iconName: "plane" },
+  { name: "Technology", iconName: "cpu" },
+  { name: "Design", iconName: "palette" },
+  { name: "AI Tools", iconName: "sparkles" },
+  { name: "Productivity", iconName: "check-square" },
+  { name: "Income", iconName: "banknote" },
+].map((c) => ({
+  ...c,
+  color: ICON_COLORS[c.iconName],
+  budgetBucket: CATEGORY_TO_BUDGET_BUCKET[c.name] ?? null,
+}))
 
 // ── Budget categories (spending is derived from the ledger via SQL) ────────
 export const budgetCategoryFixtures = [

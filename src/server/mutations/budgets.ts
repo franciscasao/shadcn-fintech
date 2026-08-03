@@ -2,25 +2,12 @@ import { and, eq, sql } from "drizzle-orm"
 
 import { DEMO_USER_ID, getDb } from "@/server/db"
 import { budgetCategories, savingsGoals } from "@/server/db/schema"
+import { ICON_COLORS } from "@/server/icon-colors"
 import type { BudgetCategory } from "@/lib/types"
 
 export async function updateBudgetCategoryTarget(id: number, budget: number) {
   const db = getDb()
   db.update(budgetCategories).set({ budget }).where(eq(budgetCategories.id, id)).run()
-}
-
-// Same Tailwind text-color classes as the seeded fixtures (src/server/db/fixtures.ts)
-// — derived server-side so the client only ever sends an icon name, never a raw
-// class string that the Tailwind scanner wouldn't see and would purge in prod.
-const ICON_COLORS: Record<string, string> = {
-  utensils: "text-orange-500",
-  car: "text-blue-500",
-  "gamepad-2": "text-purple-500",
-  "shopping-bag": "text-pink-500",
-  repeat: "text-cyan-500",
-  "heart-pulse": "text-emerald-500",
-  "graduation-cap": "text-amber-500",
-  plane: "text-rose-500",
 }
 
 export type NewBudgetCategoryInput = {

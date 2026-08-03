@@ -1,24 +1,11 @@
 import { getBudgetCategories } from "@/server/queries/budgets"
 import { createBudgetCategory } from "@/server/mutations/budgets"
+import { KNOWN_ICON_NAMES } from "@/server/icon-colors"
 
 export async function GET() {
   const categories = await getBudgetCategories()
   return Response.json(categories)
 }
-
-// Kept in sync with BUDGET_ICONS in src/components/budgets/budget-icons.tsx —
-// duplicated here (rather than imported) so this route doesn't pull that
-// client-oriented JSX module into the server bundle.
-const KNOWN_ICON_NAMES = [
-  "utensils",
-  "car",
-  "gamepad-2",
-  "shopping-bag",
-  "repeat",
-  "heart-pulse",
-  "graduation-cap",
-  "plane",
-]
 
 export async function POST(request: Request) {
   const body = await request.json()

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, sql, type SQL } from "drizzle-orm"
+import { and, desc, eq, inArray, sql, type SQL } from "drizzle-orm"
 
 import { DEMO_USER_ID, getDb } from "@/server/db"
 import { cards, transactions } from "@/server/db/schema"
@@ -152,19 +152,6 @@ export async function getTransactionsPage(
     pageSize,
     totalPages,
   }
-}
-
-/** Distinct categories across the user's whole ledger, unfiltered — powers
- * the category dropdown regardless of the current filters/page. */
-export async function getTransactionCategories(): Promise<string[]> {
-  const db = getDb()
-  const rows = db
-    .selectDistinct({ category: transactions.category })
-    .from(transactions)
-    .where(eq(transactions.userId, DEMO_USER_ID))
-    .orderBy(asc(transactions.category))
-    .all()
-  return rows.map((r) => r.category)
 }
 
 /** Full rows for a set of ids, regardless of the current filters/page —

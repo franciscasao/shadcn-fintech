@@ -124,6 +124,16 @@ export type WatchlistItem = {
 export type PortfolioHistoryPoint = { date: string; portfolio: number; sp500: number }
 
 // ── Budgets page ─────────────────────────────────────────────────────────────
+// ── Categories (Settings page) ──────────────────────────────────────────────
+export type Category = {
+  id: string
+  name: string
+  iconName: string
+  color: string
+  budgetBucket: string | null
+  transactionCount: number
+}
+
 export type BudgetCategory = {
   id: string
   category: string

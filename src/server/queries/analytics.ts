@@ -3,8 +3,10 @@ import { addDays, format, subDays, subMonths } from "date-fns"
 
 import { DEMO_USER_ID, getDb } from "@/server/db"
 import { budgetCategories, transactions } from "@/server/db/schema"
-import { BUDGET_BUCKETS, CATEGORY_TO_BUDGET_BUCKET, LEDGER_ANCHOR } from "@/server/db/generate"
+import { LEDGER_ANCHOR } from "@/server/db/generate"
 import { toISODate } from "@/server/db/format"
+import { getBudgetBuckets } from "@/server/queries/budgets"
+import { getBudgetBucketMap } from "@/server/queries/categories"
 import type {
   CategoryBreakdown,
   DailySpending,
@@ -57,9 +59,10 @@ export async function getCategoryBreakdown(): Promise<CategoryBreakdown[]> {
     (r) => r.type === "expense" && r.date >= start && r.date < end
   )
 
+  const bucketMap = await getBudgetBucketMap()
   const buckets = new Map<string, { amount: number; subs: Map<string, number> }>()
   for (const r of monthExpenses) {
-    const bucket = CATEGORY_TO_BUDGET_BUCKET[r.category] ?? r.category
+    const bucket = bucketMap[r.category] ?? r.category
     const sub = r.subcategory ?? "Other"
     if (!buckets.has(bucket)) buckets.set(bucket, { amount: 0, subs: new Map() })
     const entry = buckets.get(bucket)!
@@ -68,7 +71,8 @@ export async function getCategoryBreakdown(): Promise<CategoryBreakdown[]> {
     entry.subs.set(sub, (entry.subs.get(sub) ?? 0) + amt)
   }
 
-  return BUDGET_BUCKETS.filter((b) => buckets.has(b)).map((category) => {
+  const budgetBuckets = await getBudgetBuckets()
+  return budgetBuckets.filter((b) => buckets.has(b)).map((category) => {
     const entry = buckets.get(category)!
     return {
       category,
@@ -105,6 +109,7 @@ export async function getSpendingHeatmap(): Promise<SpendingHeatmapDay[]> {
 // ── Month comparison — this month vs last month, by budget bucket ──────────
 export async function getMonthComparison(): Promise<MonthComparison[]> {
   const rows = await getAllTransactions()
+  const bucketMap = await getBudgetBucketMap()
   const thisMonth = monthBounds(0)
   const lastMonth = monthBounds(1)
 
@@ -112,7 +117,7 @@ export async function getMonthComparison(): Promise<MonthComparison[]> {
     const map = new Map<string, number>()
     for (const r of rows) {
       if (r.type !== "expense" || r.date < start || r.date >= end) continue
-      const bucket = CATEGORY_TO_BUDGET_BUCKET[r.category] ?? r.category
+      const bucket = bucketMap[r.category] ?? r.category
       map.set(bucket, (map.get(bucket) ?? 0) + Math.abs(r.amount))
     }
     return map
@@ -121,7 +126,8 @@ export async function getMonthComparison(): Promise<MonthComparison[]> {
   const thisMonthByBucket = sumByBucket(thisMonth.start, thisMonth.end)
   const lastMonthByBucket = sumByBucket(lastMonth.start, lastMonth.end)
 
-  return BUDGET_BUCKETS.map((category) => ({
+  const budgetBuckets = await getBudgetBuckets()
+  return budgetBuckets.map((category) => ({
     category,
     thisMonth: Math.round((thisMonthByBucket.get(category) ?? 0) * 100) / 100,
     lastMonth: Math.round((lastMonthByBucket.get(category) ?? 0) * 100) / 100,

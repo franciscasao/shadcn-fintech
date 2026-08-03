@@ -14,10 +14,12 @@ import { cn } from "@/lib/utils"
 export function TransactionsPageClient({
   transactionsPage,
   categories,
+  categoryMeta,
   filters,
 }: {
   transactionsPage: TransactionPage
   categories: string[]
+  categoryMeta: Record<string, { iconName: string; color: string }>
   filters: TransactionFilters
 }) {
   const router = useRouter()
@@ -121,6 +123,7 @@ export function TransactionsPageClient({
           setSelectedIds={setSelectedIds}
           expandedId={expandedId}
           setExpandedId={setExpandedId}
+          categoryMeta={categoryMeta}
         />
 
         <TransactionPagination

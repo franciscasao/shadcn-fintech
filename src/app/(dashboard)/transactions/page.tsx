@@ -1,9 +1,9 @@
 import {
   clampPageSize,
-  getTransactionCategories,
   getTransactionsPage,
   type TransactionFilters,
 } from "@/server/queries/transactions"
+import { getCategories } from "@/server/queries/categories"
 import { TransactionsPageClient } from "@/components/transactions/transactions-page-client"
 
 // Reads live data from SQLite on every request — see (dashboard)/layout.tsx.
@@ -31,14 +31,19 @@ export default async function Page({
 
   const [transactionsPage, categories] = await Promise.all([
     getTransactionsPage(filters, { page, pageSize }),
-    getTransactionCategories(),
+    getCategories(),
   ])
+  const categoryNames = categories.map((c) => c.name)
+  const categoryMeta = Object.fromEntries(
+    categories.map((c) => [c.name, { iconName: c.iconName, color: c.color }])
+  )
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
       <TransactionsPageClient
         transactionsPage={transactionsPage}
-        categories={categories}
+        categories={categoryNames}
+        categoryMeta={categoryMeta}
         filters={filters}
       />
     </div>

@@ -44,14 +44,18 @@ import {
   LaptopIcon,
   TabletIcon,
   SparklesIcon,
+  TagIcon,
 } from "lucide-react"
+import { CategoriesTab } from "@/components/settings/categories-tab"
+import type { Category } from "@/lib/types"
 
-type TabId = "profile" | "security" | "notifications" | "billing" | "appearance"
+type TabId = "profile" | "security" | "notifications" | "billing" | "appearance" | "categories"
 
 const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: "profile", label: "Profile", icon: <UserIcon className="size-4" /> },
   { id: "security", label: "Security", icon: <ShieldIcon className="size-4" /> },
   { id: "notifications", label: "Notifications", icon: <BellIcon className="size-4" /> },
+  { id: "categories", label: "Categories", icon: <TagIcon className="size-4" /> },
   { id: "billing", label: "Billing", icon: <CreditCardIcon className="size-4" /> },
   { id: "appearance", label: "Appearance", icon: <PaletteIcon className="size-4" /> },
 ]
@@ -484,7 +488,7 @@ function AppearanceTab() {
 
 // ── Main Settings Page ───────────────────────────────────────────────────────
 
-export function SettingsPageClient() {
+export function SettingsPageClient({ categories }: { categories: Category[] }) {
   const searchParams = useSearchParams()
   const tabParam = searchParams.get("tab")
   const [activeTab, setActiveTab] = React.useState<TabId>(
@@ -495,6 +499,7 @@ export function SettingsPageClient() {
     profile: <ProfileTab />,
     security: <SecurityTab />,
     notifications: <NotificationsTab />,
+    categories: <CategoriesTab categories={categories} />,
     billing: <BillingTab />,
     appearance: <AppearanceTab />,
   }

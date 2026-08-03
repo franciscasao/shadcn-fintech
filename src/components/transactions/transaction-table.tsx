@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils"
 import type { FullTransaction } from "@/data/seed"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { budgetIconMap } from "@/components/budgets/budget-icons"
 import {
   Table,
   TableBody,
@@ -34,6 +35,9 @@ interface TransactionTableProps {
   setSelectedIds: (ids: Set<string>) => void
   expandedId: string | null
   setExpandedId: (id: string | null) => void
+  /** Category name -> icon/color, from the managed categories table (see
+   * src/server/queries/categories.ts). Missing entries just render as text. */
+  categoryMeta: Record<string, { iconName: string; color: string }>
 }
 
 const fmt = (n: number) =>
@@ -65,6 +69,7 @@ export function TransactionTable({
   setSelectedIds,
   expandedId,
   setExpandedId,
+  categoryMeta,
 }: TransactionTableProps) {
   const allSelected =
     filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id))
@@ -139,6 +144,7 @@ export function TransactionTable({
                 onToggleExpand={() =>
                   setExpandedId(isExpanded ? null : tx.id)
                 }
+                categoryMeta={categoryMeta}
               />
             )
           })}
@@ -155,12 +161,14 @@ function TransactionRow({
   isExpanded,
   onToggleSelect,
   onToggleExpand,
+  categoryMeta,
 }: {
   tx: FullTransaction
   isSelected: boolean
   isExpanded: boolean
   onToggleSelect: () => void
   onToggleExpand: () => void
+  categoryMeta: Record<string, { iconName: string; color: string }>
 }) {
   return (
     <>
@@ -194,7 +202,12 @@ function TransactionRow({
             />
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{tx.merchant}</p>
-              <Badge variant="secondary" className="mt-0.5 text-[10px]">
+              <Badge variant="secondary" className="mt-0.5 gap-1 text-[10px]">
+                {categoryMeta[tx.category] && (
+                  <span className={categoryMeta[tx.category].color}>
+                    {budgetIconMap[categoryMeta[tx.category].iconName]}
+                  </span>
+                )}
                 {tx.category}
               </Badge>
             </div>

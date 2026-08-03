@@ -1,9 +1,10 @@
-import { and, eq, gte, lt, sql } from "drizzle-orm"
+import { and, asc, eq, gte, lt, sql } from "drizzle-orm"
 
 import { DEMO_USER_ID, getDb } from "@/server/db"
 import { budgetCategories, savingsGoals, transactions } from "@/server/db/schema"
-import { CATEGORY_TO_BUDGET_BUCKET, LEDGER_ANCHOR } from "@/server/db/generate"
+import { LEDGER_ANCHOR } from "@/server/db/generate"
 import { toISODate } from "@/server/db/format"
+import { getBudgetBucketMap } from "@/server/queries/categories"
 import type { BudgetCategory, SavingsGoal } from "@/lib/types"
 
 function currentMonthBounds() {
@@ -13,7 +14,8 @@ function currentMonthBounds() {
 }
 
 /** Sum of expense amounts this calendar month, grouped by budget bucket
- * (fine-grained transaction categories collapsed via CATEGORY_TO_BUDGET_BUCKET). */
+ * (fine-grained transaction categories collapsed via the categories table's
+ * budgetBucket column — see src/server/queries/categories.ts). */
 async function getSpentByBucket(): Promise<Map<string, number>> {
   const db = getDb()
   const { start, end } = currentMonthBounds()
@@ -33,13 +35,28 @@ async function getSpentByBucket(): Promise<Map<string, number>> {
     )
     .groupBy(transactions.category)
     .all()
+  const bucketMap = await getBudgetBucketMap()
 
   const byBucket = new Map<string, number>()
   for (const row of rows) {
-    const bucket = CATEGORY_TO_BUDGET_BUCKET[row.category] ?? row.category
+    const bucket = bucketMap[row.category] ?? row.category
     byBucket.set(bucket, (byBucket.get(bucket) ?? 0) + row.total)
   }
   return byBucket
+}
+
+/** The budget-bucket categories in their canonical order — derived from the
+ * budgetCategories table (seeded once, id order = display order) rather than
+ * a hardcoded list, so it stays correct if that table is ever edited. */
+export async function getBudgetBuckets(): Promise<string[]> {
+  const db = getDb()
+  const rows = db
+    .select({ category: budgetCategories.category })
+    .from(budgetCategories)
+    .where(eq(budgetCategories.userId, DEMO_USER_ID))
+    .orderBy(asc(budgetCategories.id))
+    .all()
+  return rows.map((r) => r.category)
 }
 
 export async function getBudgetCategories(): Promise<BudgetCategory[]> {

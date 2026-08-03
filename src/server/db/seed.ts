@@ -11,6 +11,7 @@ import {
   accountFixtures,
   budgetCategoryFixtures,
   cardFixtures,
+  categoryFixtures,
   contactFixtures,
   curatedTransactionFixtures,
   notificationFixtures,
@@ -27,6 +28,7 @@ async function main() {
   db.delete(schema.transfers).run()
   db.delete(schema.notifications).run()
   db.delete(schema.budgetCategories).run()
+  db.delete(schema.categories).run()
   db.delete(schema.savingsGoals).run()
   db.delete(schema.cards).run()
   db.delete(schema.accounts).run()
@@ -90,6 +92,11 @@ async function main() {
         userId: DEMO_USER_ID,
       }))
     )
+    .run()
+
+  console.log("Seeding categories...")
+  db.insert(schema.categories)
+    .values(categoryFixtures.map((c) => ({ ...c, userId: DEMO_USER_ID })))
     .run()
 
   console.log("Seeding budget categories...")
