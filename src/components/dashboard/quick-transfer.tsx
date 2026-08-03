@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import { contacts } from "@/data/seed"
+import type { Contact } from "@/lib/types"
 import {
   ChevronRightIcon,
   SendIcon,
@@ -21,8 +21,8 @@ import { motion, AnimatePresence } from "motion/react"
 
 type SendState = "idle" | "sending" | "success"
 
-export function QuickTransfer() {
-  const [selectedContact, setSelectedContact] = useState(contacts[0].id)
+export function QuickTransfer({ contacts }: { contacts: Contact[] }) {
+  const [selectedContact, setSelectedContact] = useState(contacts[0]?.id)
   const [amount, setAmount] = useState("250.00")
   const [sendState, setSendState] = useState<SendState>("idle")
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null)

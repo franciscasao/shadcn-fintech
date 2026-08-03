@@ -10,7 +10,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card"
-import { recurringCharges, type RecurringCharge } from "@/data/seed"
+import type { RecurringCharge } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { CheckCircle2Icon, FlagIcon, CircleDashedIcon } from "lucide-react"
 
@@ -33,7 +33,11 @@ function StatusIcon({ status }: { status: Status }) {
   }
 }
 
-export function RecurringDetector() {
+export function RecurringDetector({
+  recurringCharges,
+}: {
+  recurringCharges: RecurringCharge[]
+}) {
   const [statuses, setStatuses] = useState<Record<string, Status>>(() => {
     const map: Record<string, Status> = {}
     recurringCharges.forEach((c) => {
@@ -48,7 +52,7 @@ export function RecurringDetector() {
         if (c.frequency === "yearly") return s + c.amount / 12
         return s + c.amount
       }, 0),
-    []
+    [recurringCharges]
   )
 
   const summary = useMemo(() => {

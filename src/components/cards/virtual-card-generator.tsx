@@ -11,18 +11,35 @@ import {
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import type { CardData } from "@/data/seed"
 
 type Step = "idle" | "form" | "loading" | "success"
 
-interface VirtualCardGeneratorProps {
-  onCardCreated: (card: CardData) => void
+export type NewVirtualCardInput = {
+  name: string
+  monthlyLimit?: number
 }
 
+interface VirtualCardGeneratorProps {
+  onCardCreated: (input: NewVirtualCardInput) => Promise<void>
+}
+
+// A locally-previewed card number/expiry/cvv shown in the success panel —
+// cosmetic only; the server mints the real values independently on create.
 function randomDigits(n: number): string {
   return Array.from({ length: n }, () => Math.floor(Math.random() * 10)).join(
     "",
   )
+}
+
+function buildPreview(name: string, limit: string) {
+  const last4 = randomDigits(4)
+  return {
+    name: name.trim(),
+    cardNumber: `${randomDigits(4)} ${randomDigits(4)} ${randomDigits(4)} ${last4}`,
+    expiry: `${String(Math.floor(Math.random() * 12) + 1).padStart(2, "0")}/${String(new Date().getFullYear() + 3).slice(-2)}`,
+    cvv: randomDigits(3),
+    monthlyLimit: Number(limit) || 3000,
+  }
 }
 
 export function VirtualCardGenerator({
@@ -31,7 +48,7 @@ export function VirtualCardGenerator({
   const [step, setStep] = useState<Step>("idle")
   const [name, setName] = useState("")
   const [limit, setLimit] = useState("")
-  const [newCard, setNewCard] = useState<CardData | null>(null)
+  const [newCard, setNewCard] = useState<ReturnType<typeof buildPreview> | null>(null)
   const [copied, setCopied] = useState(false)
 
   const reset = useCallback(() => {
@@ -42,37 +59,21 @@ export function VirtualCardGenerator({
     setCopied(false)
   }, [])
 
-  const handleGenerate = useCallback(() => {
+  const handleGenerate = useCallback(async () => {
     if (!name.trim()) return
     setStep("loading")
 
-    const last4 = randomDigits(4)
-    const card: CardData = {
-      id: `vc-${Date.now()}`,
-      name: name.trim(),
-      type: "virtual",
-      last4,
-      cardNumber: `${randomDigits(4)} ${randomDigits(4)} ${randomDigits(4)} ${last4}`,
-      holder: "ALEX MORGAN",
-      expiry: `${String(Math.floor(Math.random() * 12) + 1).padStart(2, "0")}/${String(new Date().getFullYear() + 3).slice(-2)}`,
-      cvv: randomDigits(3),
-      network: Math.random() > 0.5 ? "visa" : "mastercard",
-      frozen: false,
-      dailyLimit: 1000,
-      monthlySpend: 0,
-      monthlyLimit: Number(limit) || 3000,
-      color: "bg-muted text-foreground",
-    }
-
-    setTimeout(() => {
-      setNewCard(card)
+    const preview = buildPreview(name, limit)
+    try {
+      await onCardCreated({ name: preview.name, monthlyLimit: preview.monthlyLimit })
+      setNewCard(preview)
       setStep("success")
-      onCardCreated(card)
-
       setTimeout(() => {
         reset()
       }, 4000)
-    }, 1200)
+    } catch {
+      setStep("form")
+    }
   }, [name, limit, onCardCreated, reset])
 
   const handleCopy = useCallback(() => {

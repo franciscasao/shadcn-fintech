@@ -9,7 +9,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import { Area, AreaChart, ReferenceLine, XAxis, YAxis } from "recharts"
-import { budgetCategories, dailySpending } from "@/data/seed"
+import type { BudgetCategory, DailySpending } from "@/lib/types"
 import { AlertTriangleIcon, CheckCircle2Icon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -20,7 +20,13 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function MonthProjection() {
+export function MonthProjection({
+  budgetCategories,
+  dailySpending,
+}: {
+  budgetCategories: BudgetCategory[]
+  dailySpending: DailySpending[]
+}) {
   const stats = useMemo(() => {
     const totalBudget = budgetCategories.reduce((s, b) => s + b.budget, 0)
     const spentDays = dailySpending.filter((d) => d.amount > 0)
@@ -38,7 +44,7 @@ export function MonthProjection() {
     }, [])
 
     return { totalBudget, totalSpent, avgDaily, daysLeft, projected, overBudget, chartData }
-  }, [])
+  }, [budgetCategories, dailySpending])
 
   return (
     <Card>

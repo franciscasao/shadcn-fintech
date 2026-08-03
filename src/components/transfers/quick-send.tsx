@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import { contacts, type TransferRecord } from "@/data/seed"
+import type { Contact } from "@/lib/types"
 import {
   SendIcon,
   LoaderCircleIcon,
@@ -20,39 +20,34 @@ import { motion, AnimatePresence } from "motion/react"
 
 type SendState = "idle" | "sending" | "success"
 
-export function QuickSend({ onSend }: { onSend?: (record: TransferRecord) => void }) {
-  const [selectedContact, setSelectedContact] = useState(contacts[0].id)
+interface QuickSendProps {
+  contacts: Contact[]
+  onSend: (contactId: string, amount: number, note?: string) => Promise<void>
+}
+
+export function QuickSend({ contacts, onSend }: QuickSendProps) {
+  const [selectedContact, setSelectedContact] = useState(contacts[0]?.id)
   const [amount, setAmount] = useState("")
   const [note, setNote] = useState("")
   const [sendState, setSendState] = useState<SendState>("idle")
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null)
   const selected = contacts.find((c) => c.id === selectedContact)
 
-  const handleSend = () => {
-    if (sendState !== "idle" || !amount || parseFloat(amount) <= 0) return
+  const handleSend = async () => {
+    if (sendState !== "idle" || !amount || parseFloat(amount) <= 0 || !selected) return
     setSendState("sending")
 
-    timeoutRef.current = setTimeout(() => {
+    try {
+      await onSend(selected.id, parseFloat(amount), note || undefined)
       setSendState("success")
-      if (onSend && selected) {
-        const newRecord: TransferRecord = {
-          id: `tr-${Date.now()}`,
-          type: "sent",
-          contactName: selected.name,
-          contactAvatar: selected.avatar,
-          amount: parseFloat(amount),
-          date: new Date().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
-          status: "completed",
-          note: note || undefined,
-        }
-        onSend(newRecord)
-      }
       timeoutRef.current = setTimeout(() => {
         setSendState("idle")
         setAmount("")
         setNote("")
       }, 2000)
-    }, 1500)
+    } catch {
+      setSendState("idle")
+    }
   }
 
   return (

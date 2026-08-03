@@ -5,7 +5,7 @@ import { Switch } from "@/components/ui/switch"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import type { CardData } from "@/data/seed"
+import type { CardData } from "@/lib/types"
 
 interface CardControlsProps {
   card: CardData
@@ -13,6 +13,8 @@ interface CardControlsProps {
   onToggleFreeze: () => void
   dailyLimit: number
   onDailyLimitChange: (val: number) => void
+  /** Fired once when the user releases the slider — persists the value. */
+  onDailyLimitCommit: (val: number) => void
 }
 
 function formatCurrency(value: number): string {
@@ -30,6 +32,7 @@ export function CardControls({
   onToggleFreeze,
   dailyLimit,
   onDailyLimitChange,
+  onDailyLimitCommit,
 }: CardControlsProps) {
   const spendPercent =
     card.monthlyLimit > 0
@@ -79,6 +82,10 @@ export function CardControls({
             onValueChange={(value) => {
               const v = Array.isArray(value) ? value[0] : value
               onDailyLimitChange(v)
+            }}
+            onValueCommitted={(value) => {
+              const v = Array.isArray(value) ? value[0] : value
+              onDailyLimitCommit(v)
             }}
           />
           <div className="flex justify-between text-xs text-muted-foreground tabular-nums">

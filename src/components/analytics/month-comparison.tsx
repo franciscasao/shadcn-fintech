@@ -15,7 +15,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
-import { monthComparisons } from "@/data/seed"
+import type { MonthComparison as MonthComparisonRow } from "@/lib/types"
 
 const chartConfig = {
   thisMonth: {
@@ -28,14 +28,16 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-function ChangeLabel(props: Record<string, unknown>) {
-  const { x, y, width, index } = props as {
-    x: number
-    y: number
-    width: number
-    index: number
+// Stable top-level component (not created during render) — the current
+// month's rows are passed in explicitly alongside recharts' injected props
+// via the render-prop `content={(props) => <ChangeLabel .../>}` below.
+function ChangeLabel(
+  props: { x: number; y: number; width: number; index: number } & {
+    rows: MonthComparisonRow[]
   }
-  const row = monthComparisons[index]
+) {
+  const { x, y, width, index, rows } = props
+  const row = rows[index]
   if (!row || row.lastMonth === 0) return null
   const pct = Math.round(((row.thisMonth - row.lastMonth) / row.lastMonth) * 100)
   if (pct === 0) return null
@@ -53,12 +55,16 @@ function ChangeLabel(props: Record<string, unknown>) {
   )
 }
 
-export function MonthComparison() {
+export function MonthComparison({
+  monthComparisons,
+}: {
+  monthComparisons: MonthComparisonRow[]
+}) {
   const totals = useMemo(() => {
     const thisMonth = monthComparisons.reduce((s, r) => s + r.thisMonth, 0)
     const lastMonth = monthComparisons.reduce((s, r) => s + r.lastMonth, 0)
     return { thisMonth, lastMonth }
-  }, [])
+  }, [monthComparisons])
 
   return (
     <Card>
@@ -143,7 +149,12 @@ export function MonthComparison() {
             >
               <LabelList
                 dataKey="thisMonth"
-                content={<ChangeLabel />}
+                content={(props) => (
+                  <ChangeLabel
+                    {...(props as { x: number; y: number; width: number; index: number })}
+                    rows={monthComparisons}
+                  />
+                )}
               />
             </Bar>
           </BarChart>

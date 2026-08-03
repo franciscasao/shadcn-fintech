@@ -1,12 +1,13 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "motion/react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { notifications as seedNotifications, type Notification } from "@/data/seed"
+import type { Notification } from "@/lib/types"
 import { EmptyState } from "@/components/empty-state"
 import {
   ArrowDownLeftIcon,
@@ -63,8 +64,13 @@ const filters: { label: string; value: FilterType }[] = [
   { label: "System", value: "system" },
 ]
 
-export function NotificationsPageClient() {
-  const [items, setItems] = React.useState<Notification[]>(seedNotifications)
+export function NotificationsPageClient({
+  initialNotifications,
+}: {
+  initialNotifications: Notification[]
+}) {
+  const router = useRouter()
+  const [items, setItems] = React.useState<Notification[]>(initialNotifications)
   const [filter, setFilter] = React.useState<FilterType>("all")
 
   const unreadCount = items.filter((n) => !n.read).length
@@ -75,18 +81,28 @@ export function NotificationsPageClient() {
     return n.type === filter
   })
 
+  // Each handler updates local state immediately (so exit/height animations
+  // run right away) and fires the request in the background; router.refresh()
+  // re-pulls the layout's data too, so the sidebar's unread badge stays in sync.
   function markAllRead() {
     setItems((prev) => prev.map((n) => ({ ...n, read: true })))
+    fetch("/api/notifications/read-all", { method: "POST" }).then(() => router.refresh())
   }
 
   function toggleRead(id: string) {
     setItems((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     )
+    fetch(`/api/notifications/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ read: true }),
+    }).then(() => router.refresh())
   }
 
   function dismiss(id: string) {
     setItems((prev) => prev.filter((n) => n.id !== id))
+    fetch(`/api/notifications/${id}`, { method: "DELETE" }).then(() => router.refresh())
   }
 
   return (

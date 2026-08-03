@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { savingsGoals } from "@/data/seed"
+import type { SavingsGoal } from "@/lib/types"
 import {
   PalmtreeIcon,
   ShieldIcon,
@@ -16,7 +16,7 @@ const iconMap: Record<string, React.ReactNode> = {
   home: <HomeIcon className="size-5" />,
 }
 
-export function SavingsGoals() {
+export function SavingsGoals({ savingsGoals }: { savingsGoals: SavingsGoal[] }) {
   return (
     <Card className="col-span-full">
       <CardHeader>

@@ -8,15 +8,31 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
+import { getNotifications } from "@/server/queries/notifications"
+import { getContacts } from "@/server/queries/contacts"
+import { getRecentTransactions } from "@/server/queries/transactions"
 
-export default function DashboardLayout({
+// Every page under this layout reads live data from SQLite via better-sqlite3,
+// which Next.js can't detect as "dynamic" the way it does fetch() — without
+// this, the previous-model default static optimizer would prerender these
+// routes once at build time and freeze their data. See caching-without-cache-
+// components.md's `dynamic` route segment config.
+export const dynamic = "force-dynamic"
+
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const [notifications, contacts, recentTransactions] = await Promise.all([
+    getNotifications(),
+    getContacts(),
+    getRecentTransactions(),
+  ])
+
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar notifications={notifications} />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2">
           <div className="flex items-center gap-2 px-4">
@@ -34,7 +50,7 @@ export default function DashboardLayout({
             <ThemeToggle />
           </div>
         </header>
-        <CommandPalette />
+        <CommandPalette contacts={contacts} recentTransactions={recentTransactions} />
         <main className="flex flex-1 flex-col">{children}</main>
       </SidebarInset>
     </SidebarProvider>

@@ -17,7 +17,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
-import { categoryBreakdowns } from "@/data/seed"
+import type { CategoryBreakdown } from "@/lib/types"
 
 const SUBCATEGORY_COLORS = [
   "var(--color-chart-1)",
@@ -27,17 +27,21 @@ const SUBCATEGORY_COLORS = [
   "var(--color-chart-5)",
 ]
 
-export function CategoryDonut() {
+export function CategoryDonut({
+  categoryBreakdowns,
+}: {
+  categoryBreakdowns: CategoryBreakdown[]
+}) {
   const [selected, setSelected] = useState<string | null>(null)
 
   const total = useMemo(
     () => categoryBreakdowns.reduce((s, c) => s + c.amount, 0),
-    []
+    [categoryBreakdowns]
   )
 
   const selectedCategory = useMemo(
     () => categoryBreakdowns.find((c) => c.category === selected) ?? null,
-    [selected]
+    [categoryBreakdowns, selected]
   )
 
   const chartConfig = useMemo<ChartConfig>(() => {
@@ -59,7 +63,7 @@ export function CategoryDonut() {
       }
     })
     return config
-  }, [selectedCategory])
+  }, [categoryBreakdowns, selectedCategory])
 
   const pieData = useMemo(() => {
     if (selectedCategory) {
@@ -74,7 +78,7 @@ export function CategoryDonut() {
       value: c.amount,
       fill: c.color,
     }))
-  }, [selectedCategory])
+  }, [categoryBreakdowns, selectedCategory])
 
   const centerAmount = selectedCategory ? selectedCategory.amount : total
 

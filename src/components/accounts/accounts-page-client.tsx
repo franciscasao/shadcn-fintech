@@ -1,12 +1,13 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 
-import { bankAccounts, type BankAccount } from "@/data/seed"
+import type { BankAccount } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { AccountSummary } from "@/components/accounts/account-summary"
 import { AccountCard } from "@/components/accounts/account-grid"
-import { AddAccount } from "@/components/accounts/add-account"
+import { AddAccount, type NewAccountInput } from "@/components/accounts/add-account"
 import { EmptyState } from "@/components/empty-state"
 
 const filterTabs = [
@@ -19,9 +20,14 @@ const filterTabs = [
 
 type AccountType = (typeof filterTabs)[number]["value"]
 
-export function AccountsPageClient() {
+export function AccountsPageClient({
+  initialAccounts,
+}: {
+  initialAccounts: BankAccount[]
+}) {
+  const router = useRouter()
   const [selectedType, setSelectedType] = useState<AccountType>("all")
-  const [accounts, setAccounts] = useState<BankAccount[]>(bankAccounts)
+  const accounts = initialAccounts
 
   const filtered = useMemo(
     () =>
@@ -31,8 +37,14 @@ export function AccountsPageClient() {
     [accounts, selectedType]
   )
 
-  function handleAddAccount(account: BankAccount) {
-    setAccounts((prev) => [...prev, account])
+  async function handleAddAccount(input: NewAccountInput) {
+    const res = await fetch("/api/accounts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    })
+    if (!res.ok) throw new Error("Failed to link account")
+    router.refresh()
   }
 
   return (

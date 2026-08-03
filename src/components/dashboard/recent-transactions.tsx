@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { recentTransactions } from "@/data/seed"
+import type { Transaction } from "@/lib/types"
 import {
   MoreHorizontalIcon,
   ChevronRightIcon,
@@ -23,7 +23,11 @@ const categoryColors: Record<string, string> = {
   Productivity: "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-400",
 }
 
-export function RecentTransactions() {
+export function RecentTransactions({
+  recentTransactions,
+}: {
+  recentTransactions: Transaction[]
+}) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">

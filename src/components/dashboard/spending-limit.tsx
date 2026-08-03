@@ -5,10 +5,10 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { spendingLimit } from "@/data/seed"
+import type { SpendingLimitSummary } from "@/lib/types"
 import { ShieldCheckIcon } from "lucide-react"
 
-export function SpendingLimit() {
+export function SpendingLimit({ spendingLimit }: { spendingLimit: SpendingLimitSummary }) {
   const percentUsed = Math.round(
     (spendingLimit.spent / spendingLimit.budget) * 100
   )

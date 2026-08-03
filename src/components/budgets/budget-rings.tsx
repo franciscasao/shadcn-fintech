@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { budgetCategories } from "@/data/seed"
+import type { BudgetCategory } from "@/lib/types"
 import { motion } from "motion/react"
 import {
   UtensilsIcon,
@@ -29,7 +29,7 @@ const iconMap: Record<string, React.ReactNode> = {
 const RADIUS = 40
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
-export function BudgetRings() {
+export function BudgetRings({ budgetCategories }: { budgetCategories: BudgetCategory[] }) {
   return (
     <Card className="col-span-full">
       <CardHeader>

@@ -31,6 +31,7 @@ import {
   LogInIcon,
   UserPlusIcon,
 } from "lucide-react"
+import type { Notification } from "@/lib/types"
 
 const data = {
   user: {
@@ -64,7 +65,10 @@ const data = {
   ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({
+  notifications,
+  ...props
+}: { notifications: Notification[] } & React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -89,7 +93,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMoney} label="Money" />
         <NavMain items={data.navInsights} label="Insights" />
         <NavMain items={data.navAuth} label="Auth" />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavSecondary items={data.navSecondary} notifications={notifications} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

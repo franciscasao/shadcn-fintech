@@ -21,7 +21,6 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-import { moneyMovementByPeriod } from "@/data/seed"
 import { ArrowDownLeftIcon, ArrowUpRightIcon } from "lucide-react"
 
 const chartConfig = {
@@ -35,9 +34,14 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-type Period = keyof typeof moneyMovementByPeriod
+type MoneyMovementPoint = { label: string; moneyIn: number; moneyOut: number }
+type Period = "7d" | "30d" | "90d"
 
-export function MoneyMovement() {
+export function MoneyMovement({
+  moneyMovementByPeriod,
+}: {
+  moneyMovementByPeriod: Record<Period, MoneyMovementPoint[]>
+}) {
   const [period, setPeriod] = useState<Period>("7d")
   const data = moneyMovementByPeriod[period]
 

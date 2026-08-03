@@ -1,0 +1,164 @@
+import { relations, sql } from "drizzle-orm"
+import {
+  integer,
+  real,
+  sqliteTable,
+  text,
+} from "drizzle-orm/sqlite-core"
+
+// ---------------------------------------------------------------------------
+// Drizzle schema for the shadcn-fintech SQLite backend.
+//
+// Everything is scoped to a single seeded demo user (see DEMO_USER_ID in
+// src/server/db/index.ts) — there's no auth, but the user_id column is kept
+// on every table so real multi-user auth can be layered in later without a
+// schema rewrite.
+// ---------------------------------------------------------------------------
+
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  avatar: text("avatar").notNull(),
+  createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),
+})
+
+// ── Contacts (Quick Transfer targets) ───────────────────────────────────────
+export const contacts = sqliteTable("contacts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  avatar: text("avatar").notNull(),
+})
+
+// ── Bank accounts ────────────────────────────────────────────────────────────
+export const accounts = sqliteTable("accounts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  type: text("type", { enum: ["checking", "savings", "crypto", "investment"] }).notNull(),
+  institution: text("institution").notNull(),
+  institutionLogo: text("institution_logo").notNull(),
+  accountNumber: text("account_number").notNull(),
+  balance: real("balance").notNull().default(0),
+  currency: text("currency").notNull().default("$"),
+  change: real("change").notNull().default(0),
+  changePercent: real("change_percent").notNull().default(0),
+  lastActivity: text("last_activity").notNull(),
+  color: text("color").notNull(),
+  createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),
+})
+
+// ── Cards ────────────────────────────────────────────────────────────────────
+export const cards = sqliteTable("cards", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  type: text("type", { enum: ["physical", "virtual"] }).notNull(),
+  last4: text("last4").notNull(),
+  cardNumber: text("card_number").notNull(),
+  holder: text("holder").notNull(),
+  expiry: text("expiry").notNull(),
+  cvv: text("cvv").notNull(),
+  network: text("network", { enum: ["visa", "mastercard"] }).notNull(),
+  frozen: integer("frozen", { mode: "boolean" }).notNull().default(false),
+  dailyLimit: real("daily_limit").notNull(),
+  monthlySpend: real("monthly_spend").notNull().default(0),
+  monthlyLimit: real("monthly_limit").notNull(),
+  color: text("color").notNull(),
+  createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),
+})
+
+// ── Transactions (the ledger) ───────────────────────────────────────────────
+export const transactions = sqliteTable("transactions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull().references(() => users.id),
+  accountId: integer("account_id").references(() => accounts.id),
+  cardId: integer("card_id").references(() => cards.id),
+  merchant: text("merchant").notNull(),
+  transactionId: text("transaction_id").notNull(),
+  amount: real("amount").notNull(),
+  date: text("date").notNull(), // ISO YYYY-MM-DD
+  logo: text("logo").notNull(),
+  category: text("category").notNull(),
+  subcategory: text("subcategory"),
+  status: text("status", { enum: ["completed", "pending", "failed"] }).notNull(),
+  type: text("type", { enum: ["expense", "income"] }).notNull(),
+  notes: text("notes"),
+  merchantInfo: text("merchant_info"),
+})
+
+// ── Transfers ────────────────────────────────────────────────────────────────
+export const transfers = sqliteTable("transfers", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull().references(() => users.id),
+  contactId: integer("contact_id").notNull().references(() => contacts.id),
+  accountId: integer("account_id").references(() => accounts.id),
+  type: text("type", { enum: ["sent", "received", "scheduled"] }).notNull(),
+  amount: real("amount").notNull(),
+  date: text("date").notNull(), // ISO YYYY-MM-DD
+  status: text("status", { enum: ["completed", "pending", "scheduled"] }).notNull(),
+  note: text("note"),
+})
+
+// ── Notifications ────────────────────────────────────────────────────────────
+export const notifications = sqliteTable("notifications", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull().references(() => users.id),
+  type: text("type", {
+    enum: ["transaction", "security", "system", "promotion", "request"],
+  }).notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  time: text("time").notNull(),
+  read: integer("read", { mode: "boolean" }).notNull().default(false),
+  icon: text("icon").notNull(),
+  // JSON-encoded { accept, decline, amount?, from?, fromAvatar? } or null
+  actionable: text("actionable"),
+  createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),
+})
+
+// ── Budget categories ────────────────────────────────────────────────────────
+export const budgetCategories = sqliteTable("budget_categories", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull().references(() => users.id),
+  category: text("category").notNull(),
+  iconName: text("icon_name").notNull(),
+  budget: real("budget").notNull(),
+  color: text("color").notNull(),
+})
+
+// ── Savings goals ────────────────────────────────────────────────────────────
+export const savingsGoals = sqliteTable("savings_goals", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  targetAmount: real("target_amount").notNull(),
+  currentAmount: real("current_amount").notNull().default(0),
+  deadline: text("deadline").notNull(),
+  iconName: text("icon_name").notNull(),
+  monthlyContribution: real("monthly_contribution").notNull().default(0),
+})
+
+// ── Relations (used for FK joins in the query layer) ────────────────────────
+export const accountsRelations = relations(accounts, ({ many }) => ({
+  transactions: many(transactions),
+}))
+
+export const cardsRelations = relations(cards, ({ many }) => ({
+  transactions: many(transactions),
+}))
+
+export const contactsRelations = relations(contacts, ({ many }) => ({
+  transfers: many(transfers),
+}))
+
+export const transactionsRelations = relations(transactions, ({ one }) => ({
+  account: one(accounts, { fields: [transactions.accountId], references: [accounts.id] }),
+  card: one(cards, { fields: [transactions.cardId], references: [cards.id] }),
+}))
+
+export const transfersRelations = relations(transfers, ({ one }) => ({
+  contact: one(contacts, { fields: [transfers.contactId], references: [contacts.id] }),
+  account: one(accounts, { fields: [transfers.accountId], references: [accounts.id] }),
+}))

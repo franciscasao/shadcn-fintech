@@ -1,9 +1,15 @@
+import { getTransfers } from "@/server/queries/transfers"
+import { getContacts } from "@/server/queries/contacts"
 import { TransfersPageClient } from "@/components/transfers/transfers-page-client"
 
-export default function Page() {
+// Reads live data from SQLite on every request — see (dashboard)/layout.tsx.
+export const dynamic = "force-dynamic"
+
+export default async function Page() {
+  const [transfers, contacts] = await Promise.all([getTransfers(), getContacts()])
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-      <TransfersPageClient />
+      <TransfersPageClient initialTransfers={transfers} contacts={contacts} />
     </div>
   )
 }

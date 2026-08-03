@@ -16,13 +16,19 @@ import {
   SelectItem,
 } from "@/components/ui/select"
 
-import type { BankAccount } from "@/data/seed"
+import type { BankAccount } from "@/lib/types"
 
-interface AddAccountProps {
-  onAdd: (account: BankAccount) => void
+export type NewAccountInput = {
+  institution: string
+  type: BankAccount["type"]
+  accountNumber: string
 }
 
-type Step = "idle" | "form" | "loading" | "success"
+interface AddAccountProps {
+  onAdd: (input: NewAccountInput) => Promise<void>
+}
+
+type Step = "idle" | "form" | "loading" | "success" | "error"
 
 const accountTypes = [
   { value: "checking", label: "Checking" },
@@ -31,48 +37,33 @@ const accountTypes = [
   { value: "investment", label: "Investment" },
 ] as const
 
-const typeColors: Record<string, string> = {
-  checking: "bg-blue-500",
-  savings: "bg-emerald-500",
-  crypto: "bg-orange-500",
-  investment: "bg-violet-500",
-}
-
 export function AddAccount({ onAdd }: AddAccountProps) {
   const [step, setStep] = useState<Step>("idle")
   const [institution, setInstitution] = useState("")
   const [accountType, setAccountType] = useState("")
   const [accountNumber, setAccountNumber] = useState("")
 
-  function handleConnect() {
+  async function handleConnect() {
     if (!institution || !accountType || !accountNumber) return
 
     setStep("loading")
-    setTimeout(() => {
-      const newAccount: BankAccount = {
-        id: `ba-${Date.now()}`,
-        name: `${institution} ${accountType.charAt(0).toUpperCase() + accountType.slice(1)}`,
-        type: accountType as BankAccount["type"],
+    try {
+      await onAdd({
         institution,
-        institutionLogo: `/logos/${institution.toLowerCase().replace(/\s+/g, "")}-com.png`,
-        accountNumber: `****${accountNumber.slice(-4)}`,
-        balance: 0,
-        currency: "$",
-        change: 0,
-        changePercent: 0,
-        lastActivity: "Just now",
-        color: typeColors[accountType] ?? "bg-gray-500",
-      }
-      onAdd(newAccount)
+        type: accountType as BankAccount["type"],
+        accountNumber,
+      })
       setStep("success")
-
       setTimeout(() => {
         setStep("idle")
         setInstitution("")
         setAccountType("")
         setAccountNumber("")
       }, 1500)
-    }, 1500)
+    } catch {
+      setStep("error")
+      setTimeout(() => setStep("form"), 1500)
+    }
   }
 
   return (
@@ -185,6 +176,20 @@ export function AddAccount({ onAdd }: AddAccountProps) {
                 <CheckIcon className="size-5" />
               </div>
               <span className="text-sm font-medium">Connected!</span>
+            </motion.div>
+          )}
+
+          {step === "error" && (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center gap-2 text-destructive"
+            >
+              <span className="text-sm font-medium">
+                Couldn&apos;t connect — try again
+              </span>
             </motion.div>
           )}
         </AnimatePresence>

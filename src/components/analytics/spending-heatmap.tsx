@@ -14,7 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { spendingHeatmapData } from "@/data/seed"
+import type { SpendingHeatmapDay } from "@/lib/types"
 
 const DAY_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""]
 const CELL_SIZE = 13
@@ -30,7 +30,11 @@ function intensityClass(amount: number, max: number): string {
   return "fill-primary/70"
 }
 
-export function SpendingHeatmap() {
+export function SpendingHeatmap({
+  spendingHeatmapData,
+}: {
+  spendingHeatmapData: SpendingHeatmapDay[]
+}) {
   const { grid, monthLabels, yearTotal, max } = useMemo(() => {
     const data = spendingHeatmapData
     const max = Math.max(...data.map((d) => d.amount))
@@ -71,7 +75,7 @@ export function SpendingHeatmap() {
     }
 
     return { grid: weeks, monthLabels: months, yearTotal, max }
-  }, [])
+  }, [spendingHeatmapData])
 
   return (
     <Card>

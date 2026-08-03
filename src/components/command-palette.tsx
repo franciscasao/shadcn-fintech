@@ -33,9 +33,16 @@ import {
   MonitorIcon,
 } from "lucide-react"
 import { useTheme } from "next-themes"
-import { contacts, recentTransactions, cryptoCoins } from "@/data/seed"
+import { cryptoCoins } from "@/data/seed"
+import type { Contact, Transaction } from "@/lib/types"
 
-export function CommandPalette() {
+export function CommandPalette({
+  contacts,
+  recentTransactions,
+}: {
+  contacts: Contact[]
+  recentTransactions: Transaction[]
+}) {
   const [open, setOpen] = useState(false)
   const router = useRouter()
   const { setTheme } = useTheme()

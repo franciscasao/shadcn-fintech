@@ -22,7 +22,6 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, type DotProps } from "recharts"
-import { financialOverview } from "@/data/seed"
 import { CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { DateRange } from "react-day-picker"
@@ -59,7 +58,13 @@ const monthIndex: Record<string, number> = {
   Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
 }
 
-export function FinancialOverview() {
+type OverviewPoint = { month: string; currentYear: number; lastYear: number }
+
+export function FinancialOverview({
+  financialOverview,
+}: {
+  financialOverview: OverviewPoint[]
+}) {
   const [date, setDate] = useState<DateRange | undefined>({
     from: new Date(2026, 0, 1),
     to: new Date(2026, 11, 31),
@@ -78,7 +83,7 @@ export function FinancialOverview() {
       const m = monthIndex[d.month]
       return m >= fromMonth && m <= toMonth
     })
-  }, [date])
+  }, [date, financialOverview])
 
   const totals = useMemo(() => {
     const current = filteredData.reduce((s, d) => s + d.currentYear, 0)

@@ -2,13 +2,17 @@
 
 import { useMemo, useState } from "react"
 
-import { fullTransactions, type FullTransaction } from "@/data/seed"
+import type { FullTransaction } from "@/lib/types"
 import { TransactionSummary } from "@/components/transactions/transaction-summary"
 import { TransactionFilters } from "@/components/transactions/transaction-filters"
 import { TransactionTable } from "@/components/transactions/transaction-table"
 import { TransactionActions } from "@/components/transactions/transaction-actions"
 
-export function TransactionsPageClient() {
+export function TransactionsPageClient({
+  initialTransactions,
+}: {
+  initialTransactions: FullTransaction[]
+}) {
   const [search, setSearch] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
@@ -17,12 +21,12 @@ export function TransactionsPageClient() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const categories = useMemo(() => {
-    const cats = new Set(fullTransactions.map((t) => t.category))
+    const cats = new Set(initialTransactions.map((t) => t.category))
     return Array.from(cats).sort()
-  }, [])
+  }, [initialTransactions])
 
   const filteredData = useMemo(() => {
-    let data: FullTransaction[] = fullTransactions
+    let data: FullTransaction[] = initialTransactions
 
     if (search) {
       const q = search.toLowerCase()
@@ -47,10 +51,10 @@ export function TransactionsPageClient() {
     }
 
     return data
-  }, [search, categoryFilter, statusFilter, typeFilter])
+  }, [initialTransactions, search, categoryFilter, statusFilter, typeFilter])
 
   function handleExport() {
-    const selected = fullTransactions.filter((t) => selectedIds.has(t.id))
+    const selected = initialTransactions.filter((t) => selectedIds.has(t.id))
     const header = "Merchant,Transaction ID,Amount,Date,Status,Type"
     const rows = selected.map(
       (t) =>

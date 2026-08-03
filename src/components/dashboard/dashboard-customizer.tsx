@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import {
   DndContext,
   pointerWithin,
@@ -26,6 +26,7 @@ import { SpendingLimit } from "@/components/dashboard/spending-limit"
 import { MoneyMovement } from "@/components/dashboard/money-movement"
 import { RecentTransactions } from "@/components/dashboard/recent-transactions"
 import { HealthScore } from "@/components/dashboard/health-score"
+import type { Contact, SpendingLimitSummary, Transaction } from "@/lib/types"
 
 type WidgetSize = "sm" | "lg" | "full"
 
@@ -36,14 +37,24 @@ type Block = {
   component: React.ReactNode
 }
 
-const defaultBlocks: Block[] = [
-  { id: "financial-overview", label: "Financial Overview", size: "lg", component: <FinancialOverview /> },
-  { id: "account-cards", label: "Account Cards", size: "sm", component: <AccountCards /> },
-  { id: "transfer-spending", label: "Transfer & Spending", size: "sm", component: <div className="flex flex-col gap-4 [&>*]:flex-1"><QuickTransfer /><SpendingLimit /></div> },
-  { id: "money-movement", label: "Money Movement", size: "sm", component: <MoneyMovement /> },
-  { id: "health-score", label: "Financial Health", size: "sm", component: <HealthScore /> },
-  { id: "recent-transactions", label: "Recent Transactions", size: "full", component: <RecentTransactions /> },
-]
+export type DashboardData = {
+  financialOverview: { month: string; currentYear: number; lastYear: number }[]
+  contacts: Contact[]
+  spendingLimit: SpendingLimitSummary
+  moneyMovementByPeriod: Record<"7d" | "30d" | "90d", { label: string; moneyIn: number; moneyOut: number }[]>
+  recentTransactions: Transaction[]
+}
+
+function buildDefaultBlocks(data: DashboardData): Block[] {
+  return [
+    { id: "financial-overview", label: "Financial Overview", size: "lg", component: <FinancialOverview financialOverview={data.financialOverview} /> },
+    { id: "account-cards", label: "Account Cards", size: "sm", component: <AccountCards /> },
+    { id: "transfer-spending", label: "Transfer & Spending", size: "sm", component: <div className="flex flex-col gap-4 [&>*]:flex-1"><QuickTransfer contacts={data.contacts} /><SpendingLimit spendingLimit={data.spendingLimit} /></div> },
+    { id: "money-movement", label: "Money Movement", size: "sm", component: <MoneyMovement moneyMovementByPeriod={data.moneyMovementByPeriod} /> },
+    { id: "health-score", label: "Financial Health", size: "sm", component: <HealthScore /> },
+    { id: "recent-transactions", label: "Recent Transactions", size: "full", component: <RecentTransactions recentTransactions={data.recentTransactions} /> },
+  ]
+}
 
 const sizeClass: Record<WidgetSize, string> = {
   sm: "col-span-12 lg:col-span-4",
@@ -95,7 +106,8 @@ function SortableWidget({
   )
 }
 
-export function DashboardCustomizer() {
+export function DashboardCustomizer({ data }: { data: DashboardData }) {
+  const defaultBlocks = useMemo(() => buildDefaultBlocks(data), [data])
   const [editing, setEditing] = useState(false)
   const [blocks, setBlocks] = useState(() => {
     if (typeof window === "undefined") return defaultBlocks

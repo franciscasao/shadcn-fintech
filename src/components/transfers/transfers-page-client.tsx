@@ -1,8 +1,9 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 
-import { transferRecords, type TransferRecord } from "@/data/seed"
+import type { Contact, TransferRecord } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { TransferStats } from "@/components/transfers/transfer-stats"
 import { TransferList } from "@/components/transfers/transfer-list"
@@ -17,17 +18,34 @@ const tabs: { key: TabKey; label: string }[] = [
   { key: "scheduled", label: "Scheduled" },
 ]
 
-export function TransfersPageClient() {
+export function TransfersPageClient({
+  initialTransfers,
+  contacts,
+}: {
+  initialTransfers: TransferRecord[]
+  contacts: Contact[]
+}) {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabKey>("all")
-  const [transfers, setTransfers] = useState<TransferRecord[]>(transferRecords)
+  const transfers = initialTransfers
 
   const filtered = useMemo(() => {
     if (activeTab === "all") return transfers
     return transfers.filter((t) => t.type === activeTab)
   }, [activeTab, transfers])
 
-  function handleCancel(id: string) {
-    setTransfers((prev) => prev.filter((t) => t.id !== id))
+  async function handleCancel(id: string) {
+    const res = await fetch(`/api/transfers/${id}`, { method: "DELETE" })
+    if (res.ok) router.refresh()
+  }
+
+  async function handleSend(contactId: string, amount: number, note?: string) {
+    const res = await fetch("/api/transfers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contactId: Number(contactId), amount, note }),
+    })
+    if (res.ok) router.refresh()
   }
 
   return (
@@ -57,11 +75,7 @@ export function TransfersPageClient() {
       <TransferList transfers={filtered} onCancel={handleCancel} />
 
       {/* Quick send */}
-      <QuickSend
-        onSend={(record) =>
-          setTransfers((prev) => [record, ...prev])
-        }
-      />
+      <QuickSend contacts={contacts} onSend={handleSend} />
     </div>
   )
 }
