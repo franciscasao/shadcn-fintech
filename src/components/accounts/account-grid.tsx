@@ -36,10 +36,7 @@ export function AccountCard({ account, index, onSelect }: AccountCardProps) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
-      onClick={() => {
-        onSelect?.(account)
-        console.log("Selected account:", account.name)
-      }}
+      onClick={() => onSelect?.(account)}
       className="group relative cursor-pointer overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 transition-shadow hover:shadow-md"
     >
       {/* Colored left border */}

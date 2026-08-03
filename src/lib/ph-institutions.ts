@@ -188,6 +188,25 @@ export const PH_INSTITUTIONS: InstitutionTemplate[] = [
     compounding: false,
     note: "Government-owned digital bank for OFWs and their families.",
   },
+  {
+    id: "banko",
+    name: "BanKo (BPI Direct BanKo)",
+    logo: logo("banko.com.ph"),
+    kind: "digital",
+    group: "digital",
+    color: "bg-amber-500",
+    defaultType: "savings",
+    allowedTypes: ["savings"],
+    pdicInsured: true,
+    interestRate: 5.0,
+    creditingFrequency: "monthly",
+    creditingTiming: "month_end",
+    compounding: false,
+    requiredAdb: 5000,
+    interestCap: 1000000,
+    instapayFee: 0,
+    note: "TODO Savings: 5% p.a. on daily balances of ₱5,000–₱1,000,000 (0.0625% p.a. on the excess); no maintaining balance, but ₱50/month applies if dormant 12+ months with ADB under ₱500.",
+  },
 
   // ── Universal & commercial banks ─────────────────────────────────────────
   {

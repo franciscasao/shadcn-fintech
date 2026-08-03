@@ -79,3 +79,17 @@ export async function adjustAccountBalance(accountId: number, delta: number) {
     .where(eq(accounts.id, accountId))
     .run()
 }
+
+/** Sets an account's stored balance to an absolute value (e.g. a manual correction). */
+export async function setAccountBalance(accountId: number, balance: number): Promise<BankAccount> {
+  const db = getDb()
+  const account = db.select().from(accounts).where(eq(accounts.id, accountId)).get()
+  if (!account) throw new Error(`Account ${accountId} not found`)
+  const [row] = db
+    .update(accounts)
+    .set({ balance: Math.round(balance * 100) / 100 })
+    .where(eq(accounts.id, accountId))
+    .returning()
+    .all()
+  return toBankAccount(row)
+}

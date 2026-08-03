@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { AccountSummary } from "@/components/accounts/account-summary"
 import { AccountCard } from "@/components/accounts/account-grid"
 import { AddAccount, type NewAccountInput } from "@/components/accounts/add-account"
+import { EditBalanceDialog } from "@/components/accounts/edit-balance-dialog"
 import { EmptyState } from "@/components/empty-state"
 
 const filterTabs = [
@@ -27,6 +28,7 @@ export function AccountsPageClient({
 }) {
   const router = useRouter()
   const [selectedType, setSelectedType] = useState<AccountType>("all")
+  const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null)
   const accounts = initialAccounts
 
   const filtered = useMemo(
@@ -44,6 +46,16 @@ export function AccountsPageClient({
       body: JSON.stringify(input),
     })
     if (!res.ok) throw new Error("Failed to link account")
+    router.refresh()
+  }
+
+  async function handleSaveBalance(accountId: string, balance: number) {
+    const res = await fetch(`/api/accounts/${accountId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ balance }),
+    })
+    if (!res.ok) throw new Error("Failed to update balance")
     router.refresh()
   }
 
@@ -80,11 +92,22 @@ export function AccountsPageClient({
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((account, i) => (
-            <AccountCard key={account.id} account={account} index={i} />
+            <AccountCard
+              key={account.id}
+              account={account}
+              index={i}
+              onSelect={setEditingAccount}
+            />
           ))}
           <AddAccount onAdd={handleAddAccount} />
         </div>
       )}
+
+      <EditBalanceDialog
+        account={editingAccount}
+        onOpenChange={(open) => !open && setEditingAccount(null)}
+        onSave={handleSaveBalance}
+      />
     </div>
   )
 }
