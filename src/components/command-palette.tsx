@@ -34,6 +34,8 @@ import {
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { cryptoCoins } from "@/data/seed"
+import { moduleIdForHref } from "@/lib/modules"
+import { useDisabledModules } from "@/hooks/use-disabled-modules"
 import type { Contact, Transaction } from "@/lib/types"
 
 export function CommandPalette({
@@ -46,6 +48,11 @@ export function CommandPalette({
   const [open, setOpen] = useState(false)
   const router = useRouter()
   const { setTheme } = useTheme()
+  const { disabled } = useDisabledModules()
+  const isModuleEnabled = (href: string) => {
+    const moduleId = moduleIdForHref(href)
+    return moduleId === null || !disabled.has(moduleId)
+  }
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -94,7 +101,7 @@ export function CommandPalette({
               { label: "Help & Support", icon: LifeBuoyIcon, href: "/support" },
               { label: "Sign In", icon: LogInIcon, href: "/sign-in" },
               { label: "Sign Up", icon: UserPlusIcon, href: "/sign-up" },
-            ].map((page) => (
+            ].filter((page) => isModuleEnabled(page.href)).map((page) => (
               <CommandItem key={page.href} onSelect={() => run(() => router.push(page.href))}>
                 <page.icon className="mr-2 size-4" />
                 {page.label}
@@ -116,30 +123,36 @@ export function CommandPalette({
             ))}
           </CommandGroup>
 
-          <CommandSeparator />
+          {isModuleEnabled("/transfers") && (
+            <>
+              <CommandSeparator />
+              <CommandGroup heading="Quick Transfer">
+                {contacts.slice(0, 4).map((c) => (
+                  <CommandItem key={c.id} onSelect={() => run(() => router.push("/transfers"))}>
+                    <SendIcon className="mr-2 size-4" />
+                    Send to {c.name}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </>
+          )}
 
-          <CommandGroup heading="Quick Transfer">
-            {contacts.slice(0, 4).map((c) => (
-              <CommandItem key={c.id} onSelect={() => run(() => router.push("/transfers"))}>
-                <SendIcon className="mr-2 size-4" />
-                Send to {c.name}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-
-          <CommandSeparator />
-
-          <CommandGroup heading="Crypto">
-            {cryptoCoins.slice(0, 4).map((coin) => (
-              <CommandItem key={coin.id} onSelect={() => run(() => router.push("/crypto"))}>
-                <BitcoinIcon className="mr-2 size-4" />
-                {coin.name}
-                <span className="ml-auto text-xs tabular-nums text-muted-foreground">
-                  ₱{coin.price.toLocaleString()}
-                </span>
-              </CommandItem>
-            ))}
-          </CommandGroup>
+          {isModuleEnabled("/crypto") && (
+            <>
+              <CommandSeparator />
+              <CommandGroup heading="Crypto">
+                {cryptoCoins.slice(0, 4).map((coin) => (
+                  <CommandItem key={coin.id} onSelect={() => run(() => router.push("/crypto"))}>
+                    <BitcoinIcon className="mr-2 size-4" />
+                    {coin.name}
+                    <span className="ml-auto text-xs tabular-nums text-muted-foreground">
+                      ₱{coin.price.toLocaleString()}
+                    </span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </>
+          )}
 
           <CommandSeparator />
 

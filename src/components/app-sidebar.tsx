@@ -32,6 +32,8 @@ import {
   UserPlusIcon,
 } from "lucide-react"
 import type { Notification } from "@/lib/types"
+import { moduleIdForHref } from "@/lib/modules"
+import { useDisabledModules } from "@/hooks/use-disabled-modules"
 
 const data = {
   user: {
@@ -65,10 +67,27 @@ const data = {
   ],
 }
 
+function filterByEnabledModules<T extends { url: string }>(
+  items: T[],
+  disabled: Set<string>
+) {
+  return items.filter((item) => {
+    const moduleId = moduleIdForHref(item.url)
+    return moduleId === null || !disabled.has(moduleId)
+  })
+}
+
 export function AppSidebar({
   notifications,
   ...props
 }: { notifications: Notification[] } & React.ComponentProps<typeof Sidebar>) {
+  const { disabled } = useDisabledModules()
+
+  const navDaily = filterByEnabledModules(data.navDaily, disabled)
+  const navMoney = filterByEnabledModules(data.navMoney, disabled)
+  const navInsights = filterByEnabledModules(data.navInsights, disabled)
+  const navSecondary = filterByEnabledModules(data.navSecondary, disabled)
+
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -89,11 +108,11 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navDaily} label="Daily" />
-        <NavMain items={data.navMoney} label="Money" />
-        <NavMain items={data.navInsights} label="Insights" />
+        {navDaily.length > 0 && <NavMain items={navDaily} label="Daily" />}
+        {navMoney.length > 0 && <NavMain items={navMoney} label="Money" />}
+        {navInsights.length > 0 && <NavMain items={navInsights} label="Insights" />}
         <NavMain items={data.navAuth} label="Auth" />
-        <NavSecondary items={data.navSecondary} notifications={notifications} className="mt-auto" />
+        <NavSecondary items={navSecondary} notifications={notifications} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

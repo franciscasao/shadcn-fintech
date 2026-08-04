@@ -1,6 +1,7 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { CommandPalette } from "@/components/command-palette"
 import { DynamicBreadcrumb } from "@/components/dynamic-breadcrumb"
+import { ModuleGate } from "@/components/module-gate"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -51,7 +52,9 @@ export default async function DashboardLayout({
           </div>
         </header>
         <CommandPalette contacts={contacts} recentTransactions={recentTransactions} />
-        <main className="flex flex-1 flex-col">{children}</main>
+        <main className="flex flex-1 flex-col">
+          <ModuleGate>{children}</ModuleGate>
+        </main>
       </SidebarInset>
     </SidebarProvider>
   )
