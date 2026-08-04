@@ -194,8 +194,10 @@ export const cardFixtures: Omit<CardData, "id" | "monthlySpend">[] = [
   },
 ]
 
-// ── Transfers (contactName is resolved to a contact id in seed.ts) ─────────
-export const transferFixtures: (Omit<TransferRecord, "id" | "contactAvatar"> & {
+// ── Transfers (contactName is resolved to a contact id in seed.ts; all
+// seeded transfers are external/contact-based — kind defaults to "external"
+// at the schema level, see @/server/db/schema) ──────────────────────────────
+export const transferFixtures: (Omit<TransferRecord, "id" | "kind" | "contactAvatar"> & {
   contactName: string
 })[] = [
   { type: "sent", contactName: "Sarah Chen", amount: 250.0, date: "2026-04-12", status: "completed", note: "Dinner split" },
@@ -233,8 +235,11 @@ export const notificationFixtures: Omit<Notification, "id">[] = [
 // Fixtures and the generated ledger, see generate.ts) — the user-managed
 // entity backing the Categories settings tab. budgetBucket mirrors
 // CATEGORY_TO_BUDGET_BUCKET so seeded categories roll up into the same
-// analytics buckets the app already shows; "Income" has none, matching its
-// exclusion from spending aggregates.
+// analytics buckets the app already shows; "Income" and "Transfer" have
+// none, matching their exclusion from spending aggregates (the latter is
+// also created on demand by createInternalTransfer, see
+// @/server/mutations/transfers, so a fresh `pnpm db:reset` matches what
+// running the app produces).
 export const categoryFixtures = [
   { name: "Food & Dining", iconName: "utensils" },
   { name: "Transport", iconName: "car" },
@@ -248,6 +253,7 @@ export const categoryFixtures = [
   { name: "AI Tools", iconName: "sparkles" },
   { name: "Productivity", iconName: "check-square" },
   { name: "Income", iconName: "banknote" },
+  { name: "Transfer", iconName: "repeat" },
 ].map((c) => ({
   ...c,
   color: ICON_COLORS[c.iconName],

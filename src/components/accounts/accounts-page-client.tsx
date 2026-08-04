@@ -2,14 +2,18 @@
 
 import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { ArrowLeftRightIcon } from "lucide-react"
 
 import type { BankAccount } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import { AccountSummary } from "@/components/accounts/account-summary"
 import { AccountCard } from "@/components/accounts/account-grid"
 import { AddAccount, type NewAccountInput } from "@/components/accounts/add-account"
 import { EditBalanceDialog } from "@/components/accounts/edit-balance-dialog"
 import { EmptyState } from "@/components/empty-state"
+import { TransferBetweenAccountsDialog } from "@/components/transfers/transfer-between-accounts-dialog"
+import type { NewInternalTransferInput } from "@/server/mutations/transfers"
 
 const filterTabs = [
   { value: "all", label: "All" },
@@ -23,12 +27,15 @@ type AccountType = (typeof filterTabs)[number]["value"]
 
 export function AccountsPageClient({
   initialAccounts,
+  defaultDate,
 }: {
   initialAccounts: BankAccount[]
+  defaultDate: string
 }) {
   const router = useRouter()
   const [selectedType, setSelectedType] = useState<AccountType>("all")
   const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null)
+  const [transferOpen, setTransferOpen] = useState(false)
   const accounts = initialAccounts
 
   const filtered = useMemo(
@@ -59,27 +66,53 @@ export function AccountsPageClient({
     router.refresh()
   }
 
+  async function handleInternalTransfer(input: NewInternalTransferInput) {
+    const res = await fetch("/api/transfers/internal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => null)
+      throw new Error(body?.error ?? "Couldn't complete transfer")
+    }
+    router.refresh()
+  }
+
   return (
     <div className="flex flex-col gap-4">
       {/* Summary row */}
       <AccountSummary accounts={accounts} />
 
       {/* Filter tabs */}
-      <div className="flex flex-wrap gap-1.5">
-        {filterTabs.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setSelectedType(tab.value)}
-            className={cn(
-              "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-              selectedType === tab.value
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-            )}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap gap-1.5">
+          {filterTabs.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setSelectedType(tab.value)}
+              className={cn(
+                "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+                selectedType === tab.value
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        {accounts.length >= 2 && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+            onClick={() => setTransferOpen(true)}
           >
-            {tab.label}
-          </button>
-        ))}
+            <ArrowLeftRightIcon className="size-3.5" />
+            Transfer
+          </Button>
+        )}
       </div>
 
       {/* Account grid + add card */}
@@ -107,6 +140,14 @@ export function AccountsPageClient({
         account={editingAccount}
         onOpenChange={(open) => !open && setEditingAccount(null)}
         onSave={handleSaveBalance}
+      />
+
+      <TransferBetweenAccountsDialog
+        open={transferOpen}
+        onOpenChange={setTransferOpen}
+        accounts={accounts}
+        defaultDate={defaultDate}
+        onSubmit={handleInternalTransfer}
       />
     </div>
   )

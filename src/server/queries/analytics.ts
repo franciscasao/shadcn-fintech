@@ -1,4 +1,4 @@
-import { and, eq, gte, lt } from "drizzle-orm"
+import { and, eq, gte, isNull, lt } from "drizzle-orm"
 import { addDays, format, subDays, subMonths } from "date-fns"
 
 import { DEMO_USER_ID, getDb } from "@/server/db"
@@ -39,9 +39,17 @@ const RECURRING_STATUS_OVERRIDE: Record<string, "review" | "unset"> = {
 
 type TxnRow = typeof transactions.$inferSelect
 
+// Excludes both legs of account-to-account transfers (transferId set — see
+// createInternalTransfer in @/server/mutations/transfers) so moving money
+// between the user's own accounts doesn't inflate income/spending totals;
+// every aggregate below is derived from this one query.
 async function getAllTransactions(): Promise<TxnRow[]> {
   const db = getDb()
-  return db.select().from(transactions).where(eq(transactions.userId, DEMO_USER_ID)).all()
+  return db
+    .select()
+    .from(transactions)
+    .where(and(eq(transactions.userId, DEMO_USER_ID), isNull(transactions.transferId)))
+    .all()
 }
 
 function monthBounds(monthsAgo: number) {
@@ -276,6 +284,7 @@ export async function getSpendingLimitSummary() {
       and(
         eq(transactions.userId, DEMO_USER_ID),
         eq(transactions.type, "expense"),
+        isNull(transactions.transferId),
         gte(transactions.date, start),
         lt(transactions.date, end)
       )

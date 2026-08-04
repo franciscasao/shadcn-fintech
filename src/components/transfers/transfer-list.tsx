@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { AnimatePresence, motion } from "motion/react"
-import { XIcon } from "lucide-react"
+import { ArrowLeftRightIcon, XIcon } from "lucide-react"
 import { EmptyState } from "@/components/empty-state"
 
 import { cn } from "@/lib/utils"
@@ -72,19 +72,27 @@ export function TransferList({ transfers, onCancel }: TransferListProps) {
               className="group flex items-center gap-3 px-4 py-3"
             >
               {/* Avatar */}
-              <Image
-                src={transfer.contactAvatar}
-                alt={transfer.contactName}
-                width={40}
-                height={40}
-                className="size-10 shrink-0 rounded-full object-cover"
-                unoptimized
-              />
+              {transfer.kind === "internal" ? (
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted">
+                  <ArrowLeftRightIcon className="size-4 text-muted-foreground" />
+                </div>
+              ) : (
+                <Image
+                  src={transfer.contactAvatar ?? ""}
+                  alt={transfer.contactName ?? "Contact"}
+                  width={40}
+                  height={40}
+                  className="size-10 shrink-0 rounded-full object-cover"
+                  unoptimized
+                />
+              )}
 
               {/* Name + note */}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">
-                  {transfer.contactName}
+                  {transfer.kind === "internal"
+                    ? `${transfer.fromAccountName} → ${transfer.toAccountName}`
+                    : transfer.contactName}
                 </p>
                 {transfer.note && (
                   <p className="truncate text-xs italic text-muted-foreground">

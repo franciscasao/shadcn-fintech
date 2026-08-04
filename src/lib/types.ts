@@ -47,6 +47,7 @@ export type FullTransaction = {
   notes?: string
   merchantInfo?: string
   cardLast4?: string
+  transferId?: number
 }
 
 // ── Cards page ───────────────────────────────────────────────────────────────
@@ -218,9 +219,14 @@ export type BankAccount = {
 // ── Transfers page ───────────────────────────────────────────────────────────
 export type TransferRecord = {
   id: string
+  kind: "external" | "internal"
   type: "sent" | "received" | "scheduled"
-  contactName: string
-  contactAvatar: string
+  // External (contact) transfers
+  contactName?: string
+  contactAvatar?: string
+  // Internal (account-to-account) transfers
+  fromAccountName?: string
+  toAccountName?: string
   amount: number
   date: string
   status: "completed" | "pending" | "scheduled"

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
+import { useRouter } from "next/navigation"
 import {
   Card,
   CardContent,
@@ -10,23 +11,49 @@ import {
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
-import type { Contact } from "@/lib/types"
+import type { BankAccount, Contact } from "@/lib/types"
 import {
+  ArrowLeftRightIcon,
   ChevronRightIcon,
   SendIcon,
   LoaderCircleIcon,
   CheckCircle2Icon,
 } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
+import { TransferBetweenAccountsDialog } from "@/components/transfers/transfer-between-accounts-dialog"
+import type { NewInternalTransferInput } from "@/server/mutations/transfers"
 
 type SendState = "idle" | "sending" | "success"
 
-export function QuickTransfer({ contacts }: { contacts: Contact[] }) {
+export function QuickTransfer({
+  contacts,
+  accounts,
+  defaultDate,
+}: {
+  contacts: Contact[]
+  accounts: BankAccount[]
+  defaultDate: string
+}) {
+  const router = useRouter()
   const [selectedContact, setSelectedContact] = useState(contacts[0]?.id)
   const [amount, setAmount] = useState("250.00")
   const [sendState, setSendState] = useState<SendState>("idle")
+  const [internalOpen, setInternalOpen] = useState(false)
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null)
   const selected = contacts.find((c) => c.id === selectedContact)
+
+  async function handleInternalTransfer(input: NewInternalTransferInput) {
+    const res = await fetch("/api/transfers/internal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => null)
+      throw new Error(body?.error ?? "Couldn't complete transfer")
+    }
+    router.refresh()
+  }
 
   const handleSend = () => {
     if (sendState !== "idle" || !amount || parseFloat(amount) <= 0) return
@@ -47,10 +74,22 @@ export function QuickTransfer({ contacts }: { contacts: Contact[] }) {
         <CardTitle className="text-base font-semibold">
           Quick Transfer
         </CardTitle>
-        <Button variant="ghost" size="sm" className="h-auto gap-1 px-0 text-xs text-muted-foreground">
-          See All Contacts
-          <ChevronRightIcon className="size-3" />
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-auto gap-1 px-0 text-xs text-muted-foreground"
+            onClick={() => setInternalOpen(true)}
+            title="Transfer between my accounts"
+          >
+            <ArrowLeftRightIcon className="size-3" />
+            My Accounts
+          </Button>
+          <Button variant="ghost" size="sm" className="h-auto gap-1 px-0 text-xs text-muted-foreground">
+            See All Contacts
+            <ChevronRightIcon className="size-3" />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Contact avatars row */}
@@ -180,6 +219,14 @@ export function QuickTransfer({ contacts }: { contacts: Contact[] }) {
           )}
         </AnimatePresence>
       </CardContent>
+
+      <TransferBetweenAccountsDialog
+        open={internalOpen}
+        onOpenChange={setInternalOpen}
+        accounts={accounts}
+        defaultDate={defaultDate}
+        onSubmit={handleInternalTransfer}
+      />
     </Card>
   )
 }

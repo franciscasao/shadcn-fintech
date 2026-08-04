@@ -120,14 +120,23 @@ export const transactions = sqliteTable("transactions", {
   type: text("type", { enum: ["expense", "income"] }).notNull(),
   notes: text("notes"),
   merchantInfo: text("merchant_info"),
+  // Set on both legs of an account-to-account transfer (see `transfers` below)
+  // so analytics can exclude internal movement from income/spending totals.
+  transferId: integer("transfer_id").references(() => transfers.id),
 })
 
 // ── Transfers ────────────────────────────────────────────────────────────────
+// Two flavors share this table: "external" (send to a contact — contactId
+// set, toAccountId null) and "internal" (move money between the user's own
+// accounts — contactId null, toAccountId set). accountId is always the
+// *sending* account.
 export const transfers = sqliteTable("transfers", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").notNull().references(() => users.id),
-  contactId: integer("contact_id").notNull().references(() => contacts.id),
+  contactId: integer("contact_id").references(() => contacts.id),
   accountId: integer("account_id").references(() => accounts.id),
+  toAccountId: integer("to_account_id").references(() => accounts.id),
+  kind: text("kind", { enum: ["external", "internal"] }).notNull().default("external"),
   type: text("type", { enum: ["sent", "received", "scheduled"] }).notNull(),
   amount: real("amount").notNull(),
   date: text("date").notNull(), // ISO YYYY-MM-DD
@@ -204,9 +213,11 @@ export const contactsRelations = relations(contacts, ({ many }) => ({
 export const transactionsRelations = relations(transactions, ({ one }) => ({
   account: one(accounts, { fields: [transactions.accountId], references: [accounts.id] }),
   card: one(cards, { fields: [transactions.cardId], references: [cards.id] }),
+  transfer: one(transfers, { fields: [transactions.transferId], references: [transfers.id] }),
 }))
 
 export const transfersRelations = relations(transfers, ({ one }) => ({
   contact: one(contacts, { fields: [transfers.contactId], references: [contacts.id] }),
+  toAccount: one(accounts, { fields: [transfers.toAccountId], references: [accounts.id] }),
   account: one(accounts, { fields: [transfers.accountId], references: [accounts.id] }),
 }))

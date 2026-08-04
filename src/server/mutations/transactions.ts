@@ -17,7 +17,7 @@ export type NewTransactionInput = {
 }
 
 /** Synthesizes an id in the same shape as the seeded ledger (e.g. "TXN_847291"). */
-function generateTransactionId(): string {
+export function generateTransactionId(): string {
   return `TXN_${Math.floor(100000 + Math.random() * 900000)}`
 }
 
