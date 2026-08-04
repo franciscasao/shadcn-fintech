@@ -26,7 +26,7 @@ import { SpendingLimit } from "@/components/dashboard/spending-limit"
 import { MoneyMovement } from "@/components/dashboard/money-movement"
 import { RecentTransactions } from "@/components/dashboard/recent-transactions"
 import { HealthScore } from "@/components/dashboard/health-score"
-import type { Contact, SpendingLimitSummary, Transaction } from "@/lib/types"
+import type { BankAccount, Contact, SpendingLimitSummary, Transaction } from "@/lib/types"
 
 type WidgetSize = "sm" | "lg" | "full"
 
@@ -43,12 +43,13 @@ export type DashboardData = {
   spendingLimit: SpendingLimitSummary
   moneyMovementByPeriod: Record<"7d" | "30d" | "90d", { label: string; moneyIn: number; moneyOut: number }[]>
   recentTransactions: Transaction[]
+  accounts: BankAccount[]
 }
 
 function buildDefaultBlocks(data: DashboardData): Block[] {
   return [
     { id: "financial-overview", label: "Financial Overview", size: "lg", component: <FinancialOverview financialOverview={data.financialOverview} /> },
-    { id: "account-cards", label: "Account Cards", size: "sm", component: <AccountCards /> },
+    { id: "account-cards", label: "Account Cards", size: "sm", component: <AccountCards accounts={data.accounts} /> },
     { id: "transfer-spending", label: "Transfer & Spending", size: "sm", component: <div className="flex flex-col gap-4 [&>*]:flex-1"><QuickTransfer contacts={data.contacts} /><SpendingLimit spendingLimit={data.spendingLimit} /></div> },
     { id: "money-movement", label: "Money Movement", size: "sm", component: <MoneyMovement moneyMovementByPeriod={data.moneyMovementByPeriod} /> },
     { id: "health-score", label: "Financial Health", size: "sm", component: <HealthScore /> },

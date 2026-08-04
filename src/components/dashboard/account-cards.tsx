@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { accountCards, walletBalance } from "@/data/seed"
+import { useState, useEffect, useCallback, useMemo } from "react"
+import { accountCards } from "@/data/seed"
 import {
   CreditCardIcon,
   PlusIcon,
   TrendingUpIcon,
+  TrendingDownIcon,
   PhilippinePesoIcon,
   BitcoinIcon,
   ChartLineIcon,
@@ -26,6 +27,7 @@ import {
 } from "@/components/ui/select"
 import { motion, AnimatePresence } from "motion/react"
 import { cn } from "@/lib/utils"
+import type { BankAccount } from "@/lib/types"
 
 type AddState = "idle" | "form" | "adding" | "success"
 
@@ -59,12 +61,20 @@ const newCardOptions = [
   { value: "travel", label: "Travel Card", currency: "₱", style: "bg-amber-600 text-white", icon: <PhilippinePesoIcon className="size-5 opacity-30" />, chipColor: "bg-white/20" },
 ]
 
-export function AccountCards() {
+export function AccountCards({ accounts }: { accounts: BankAccount[] }) {
   const [cards, setCards] = useState(initialCards)
   const [order, setOrder] = useState(() => initialCards.map((_, i) => i))
   const [addState, setAddState] = useState<AddState>("idle")
   const [newCardType, setNewCardType] = useState("savings")
   const [newCardName, setNewCardName] = useState("")
+
+  const walletBalance = useMemo(() => {
+    const totalBalance = accounts.reduce((sum, a) => sum + a.balance, 0)
+    const totalChange = accounts.reduce((sum, a) => sum + a.change, 0)
+    const previousBalance = totalBalance - totalChange
+    const changePercent = previousBalance !== 0 ? (totalChange / previousBalance) * 100 : 0
+    return { amount: totalBalance, changePercent, isPositive: totalChange >= 0 }
+  }, [accounts])
 
   const cycle = useCallback(() => {
     setOrder((prev) => {
@@ -254,9 +264,23 @@ export function AccountCards() {
           <p className="text-3xl font-bold tabular-nums tracking-tight">
             ₱{walletBalance.amount.toLocaleString("en-PH", { minimumFractionDigits: 2 })}
           </p>
-          <div className="flex items-center gap-1.5 text-sm font-medium text-emerald-600 dark:text-emerald-400">
-            <TrendingUpIcon className="size-4" />
-            <span>+{walletBalance.changePercent}% this month</span>
+          <div
+            className={cn(
+              "flex items-center gap-1.5 text-sm font-medium",
+              walletBalance.isPositive
+                ? "text-emerald-600 dark:text-emerald-400"
+                : "text-rose-600 dark:text-rose-400"
+            )}
+          >
+            {walletBalance.isPositive ? (
+              <TrendingUpIcon className="size-4" />
+            ) : (
+              <TrendingDownIcon className="size-4" />
+            )}
+            <span>
+              {walletBalance.isPositive ? "+" : ""}
+              {walletBalance.changePercent.toFixed(1)}% this month
+            </span>
           </div>
         </div>
       </CardContent>
