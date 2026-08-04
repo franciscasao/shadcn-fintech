@@ -1,3 +1,5 @@
+"use client"
+
 import {
   Card,
   CardContent,
@@ -13,6 +15,10 @@ import {
   ChevronRightIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useTableSort } from "@/hooks/use-table-sort"
+import { SortIcon } from "@/components/sort-icon"
+
+type SortKey = "merchant" | "transactionId" | "amount" | "date"
 
 const categoryColors: Record<string, string> = {
   Entertainment: "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-400",
@@ -28,6 +34,22 @@ export function RecentTransactions({
 }: {
   recentTransactions: Transaction[]
 }) {
+  const { sortKey, sortDir, toggleSort, sorted } = useTableSort<Transaction, SortKey>(
+    recentTransactions,
+    (a, b, key) => {
+      switch (key) {
+        case "merchant":
+          return a.merchant.localeCompare(b.merchant)
+        case "transactionId":
+          return a.transactionId.localeCompare(b.transactionId)
+        case "amount":
+          return a.amount - b.amount
+        case "date":
+          return new Date(a.date).getTime() - new Date(b.date).getTime()
+      }
+    }
+  )
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
@@ -44,15 +66,35 @@ export function RecentTransactions({
           <div className="min-w-[600px] space-y-1">
             {/* Header */}
             <div className="grid grid-cols-[1fr_140px_100px_120px_32px] gap-4 border-b pb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              <span>Merchant</span>
-              <span className="hidden sm:inline">Transaction ID</span>
-              <span className="text-right">Amount</span>
-              <span className="hidden md:inline">Date</span>
+              <button
+                className="cursor-pointer select-none text-left hover:text-foreground"
+                onClick={() => toggleSort("merchant")}
+              >
+                Merchant <SortIcon col="merchant" sortKey={sortKey} sortDir={sortDir} />
+              </button>
+              <button
+                className="hidden cursor-pointer select-none text-left hover:text-foreground sm:inline"
+                onClick={() => toggleSort("transactionId")}
+              >
+                Transaction ID <SortIcon col="transactionId" sortKey={sortKey} sortDir={sortDir} />
+              </button>
+              <button
+                className="cursor-pointer select-none text-right hover:text-foreground"
+                onClick={() => toggleSort("amount")}
+              >
+                Amount <SortIcon col="amount" sortKey={sortKey} sortDir={sortDir} />
+              </button>
+              <button
+                className="hidden cursor-pointer select-none text-left hover:text-foreground md:inline"
+                onClick={() => toggleSort("date")}
+              >
+                Date <SortIcon col="date" sortKey={sortKey} sortDir={sortDir} />
+              </button>
               <span />
             </div>
 
             {/* Rows */}
-            {recentTransactions.map((tx) => (
+            {sorted.map((tx) => (
               <div
                 key={tx.id}
                 className="group grid grid-cols-[1fr_140px_100px_120px_32px] items-center gap-4 rounded-lg py-2.5 transition-colors hover:bg-muted/50"

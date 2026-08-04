@@ -8,10 +8,17 @@ import type { BankAccount, Contact, TransferRecord } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { TransferStats } from "@/components/transfers/transfer-stats"
-import { TransferList } from "@/components/transfers/transfer-list"
+import { TransferList, type TransferSortKey } from "@/components/transfers/transfer-list"
 import { QuickSend } from "@/components/transfers/quick-send"
 import { TransferBetweenAccountsDialog } from "@/components/transfers/transfer-between-accounts-dialog"
 import type { NewInternalTransferInput } from "@/server/mutations/transfers"
+import { useTableSort } from "@/hooks/use-table-sort"
+
+function nameOf(t: TransferRecord) {
+  return t.kind === "internal"
+    ? `${t.fromAccountName ?? ""} → ${t.toAccountName ?? ""}`
+    : (t.contactName ?? "")
+}
 
 type TabKey = "all" | "sent" | "received" | "scheduled" | "internal"
 
@@ -44,6 +51,22 @@ export function TransfersPageClient({
     if (activeTab === "internal") return transfers.filter((t) => t.kind === "internal")
     return transfers.filter((t) => t.type === activeTab)
   }, [activeTab, transfers])
+
+  const { sortKey, sortDir, toggleSort: handleSort, sorted } = useTableSort<
+    TransferRecord,
+    TransferSortKey
+  >(filtered, (a, b, key) => {
+    switch (key) {
+      case "name":
+        return nameOf(a).localeCompare(nameOf(b))
+      case "amount":
+        return a.amount - b.amount
+      case "date":
+        return new Date(a.date).getTime() - new Date(b.date).getTime()
+      case "status":
+        return a.status.localeCompare(b.status)
+    }
+  })
 
   async function handleCancel(id: string) {
     const res = await fetch(`/api/transfers/${id}`, { method: "DELETE" })
@@ -102,7 +125,13 @@ export function TransfersPageClient({
       </div>
 
       {/* Transfer list */}
-      <TransferList transfers={filtered} onCancel={handleCancel} />
+      <TransferList
+        transfers={sorted}
+        onCancel={handleCancel}
+        sortKey={sortKey}
+        sortDir={sortDir}
+        onSort={handleSort}
+      />
 
       {/* Quick send */}
       <QuickSend contacts={contacts} onSend={handleSend} />

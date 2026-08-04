@@ -8,8 +8,6 @@ import {
   MoreHorizontalIcon,
   TrendingUpIcon,
   TrendingDownIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
 } from "lucide-react"
 import { motion } from "motion/react"
 import {
@@ -37,6 +35,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import { cryptoCoins } from "@/data/seed"
+import { useTableSort } from "@/hooks/use-table-sort"
+import { SortIcon } from "@/components/sort-icon"
 import type { CryptoPrices } from "./crypto-page-client"
 
 function compactNumber(n: number) {
@@ -47,7 +47,6 @@ function compactNumber(n: number) {
 }
 
 type SortField = "price" | "volume" | "change"
-type SortDir = "asc" | "desc" | null
 
 interface MarketOverviewProps {
   prices: CryptoPrices
@@ -58,8 +57,6 @@ interface MarketOverviewProps {
 
 export function MarketOverview({ prices, originalPrices, selectedCoin, onSelectCoin }: MarketOverviewProps) {
   const [search, setSearch] = React.useState("")
-  const [sortField, setSortField] = React.useState<SortField | null>(null)
-  const [sortDir, setSortDir] = React.useState<SortDir>(null)
 
   // Track flash directions in state (not refs) for React 19 compliance
   const [flashes, setFlashes] = React.useState<Record<string, "up" | "down" | null>>({})
@@ -84,18 +81,6 @@ export function MarketOverview({ prices, originalPrices, selectedCoin, onSelectC
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prices])
 
-  function handleSort(field: SortField) {
-    if (sortField === field) {
-      // Cycle: asc -> desc -> none
-      if (sortDir === "asc") setSortDir("desc")
-      else if (sortDir === "desc") { setSortField(null); setSortDir(null) }
-      else setSortDir("asc")
-    } else {
-      setSortField(field)
-      setSortDir("asc")
-    }
-  }
-
   // Build coin data with live prices
   const coinsWithLive = cryptoCoins.map((coin) => {
     const livePrice = prices[coin.id] ?? coin.price
@@ -114,29 +99,19 @@ export function MarketOverview({ prices, originalPrices, selectedCoin, onSelectC
       c.symbol.toLowerCase().includes(search.toLowerCase())
   )
 
-  const sorted = React.useMemo(() => {
-    if (!sortField || !sortDir) return filtered
-
-    return [...filtered].sort((a, b) => {
-      let aVal: number, bVal: number
-      switch (sortField) {
-        case "price": aVal = a.livePrice; bVal = b.livePrice; break
-        case "volume": aVal = a.liveVolume; bVal = b.liveVolume; break
-        case "change": aVal = a.change24h; bVal = b.change24h; break
-        default: return 0
-      }
-      return sortDir === "asc" ? aVal - bVal : bVal - aVal
-    })
-  }, [filtered, sortField, sortDir])
-
-  function SortIndicator({ field }: { field: SortField }) {
-    if (sortField !== field) return null
-    return sortDir === "asc" ? (
-      <ArrowUpIcon className="ml-1 inline size-3" />
-    ) : (
-      <ArrowDownIcon className="ml-1 inline size-3" />
-    )
-  }
+  const { sortKey: sortField, sortDir, toggleSort: handleSort, sorted } = useTableSort<
+    (typeof filtered)[number],
+    SortField
+  >(filtered, (a, b, field) => {
+    switch (field) {
+      case "price":
+        return a.livePrice - b.livePrice
+      case "volume":
+        return a.liveVolume - b.liveVolume
+      case "change":
+        return a.change24h - b.change24h
+    }
+  })
 
   return (
     <Card className="lg:col-span-8">
@@ -168,21 +143,21 @@ export function MarketOverview({ prices, originalPrices, selectedCoin, onSelectC
                 onClick={() => handleSort("price")}
               >
                 Price
-                <SortIndicator field="price" />
+                <SortIcon col="price" sortKey={sortField} sortDir={sortDir} />
               </TableHead>
               <TableHead
                 className="hidden cursor-pointer select-none text-right sm:table-cell"
                 onClick={() => handleSort("volume")}
               >
                 Volume
-                <SortIndicator field="volume" />
+                <SortIcon col="volume" sortKey={sortField} sortDir={sortDir} />
               </TableHead>
               <TableHead
                 className="cursor-pointer select-none text-right"
                 onClick={() => handleSort("change")}
               >
                 Change
-                <SortIndicator field="change" />
+                <SortIcon col="change" sortKey={sortField} sortDir={sortDir} />
               </TableHead>
               <TableHead className="w-10 pr-4" />
             </TableRow>

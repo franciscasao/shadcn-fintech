@@ -2,6 +2,8 @@ import {
   clampPageSize,
   getTransactionsPage,
   type TransactionFilters,
+  type TransactionSort,
+  type TransactionSortKey,
 } from "@/server/queries/transactions"
 import { getCategories } from "@/server/queries/categories"
 import { getAccounts } from "@/server/queries/accounts"
@@ -14,6 +16,18 @@ export const dynamic = "force-dynamic"
 
 function first(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value
+}
+
+const SORT_KEYS: TransactionSortKey[] = ["merchant", "amount", "date", "status"]
+
+/** Validates the `sort`/`dir` searchParams against the allowed columns —
+ * these values reach a SQL `orderBy`, so anything outside this list is
+ * rejected rather than passed through. */
+function parseSort(sp: { [key: string]: string | string[] | undefined }): TransactionSort | undefined {
+  const key = first(sp.sort)
+  const dir = first(sp.dir)
+  if (!key || !SORT_KEYS.includes(key as TransactionSortKey)) return undefined
+  return { key: key as TransactionSortKey, dir: dir === "asc" ? "asc" : "desc" }
 }
 
 export default async function Page({
@@ -31,9 +45,10 @@ export default async function Page({
   }
   const page = Number(first(sp.page)) || 1
   const pageSize = clampPageSize(Number(first(sp.size)) || 25)
+  const sort = parseSort(sp)
 
   const [transactionsPage, categories, accounts] = await Promise.all([
-    getTransactionsPage(filters, { page, pageSize }),
+    getTransactionsPage(filters, { page, pageSize, sort }),
     getCategories(),
     getAccounts(),
   ])
@@ -51,6 +66,7 @@ export default async function Page({
         accounts={accounts}
         defaultDate={toISODate(LEDGER_ANCHOR)}
         filters={filters}
+        sort={sort}
       />
     </div>
   )

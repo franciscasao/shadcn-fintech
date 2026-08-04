@@ -14,9 +14,29 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { watchlistItems, type WatchlistItem } from "@/data/seed"
+import { useTableSort } from "@/hooks/use-table-sort"
+import { SortIcon } from "@/components/sort-icon"
+
+type SortKey = "symbol" | "name" | "currentPrice" | "dayChange"
 
 export function Watchlist() {
   const [items, setItems] = useState<WatchlistItem[]>(watchlistItems)
+
+  const { sortKey, sortDir, toggleSort, sorted } = useTableSort<WatchlistItem, SortKey>(
+    items,
+    (a, b, key) => {
+      switch (key) {
+        case "symbol":
+          return a.symbol.localeCompare(b.symbol)
+        case "name":
+          return a.name.localeCompare(b.name)
+        case "currentPrice":
+          return a.currentPrice - b.currentPrice
+        case "dayChange":
+          return a.dayChange - b.dayChange
+      }
+    }
+  )
 
   const removeItem = (id: string) => {
     setItems((prev) => prev.filter((w) => w.id !== id))
@@ -28,8 +48,39 @@ export function Watchlist() {
         <CardTitle>Watchlist</CardTitle>
       </CardHeader>
       <CardContent className="px-0">
+        {items.length > 0 && (
+          <div className="flex items-center gap-3 border-b px-4 pb-2 text-xs font-medium text-muted-foreground">
+            <div className="size-7 shrink-0" />
+            <button
+              className="w-14 shrink-0 cursor-pointer select-none text-left hover:text-foreground"
+              onClick={() => toggleSort("symbol")}
+            >
+              Symbol <SortIcon col="symbol" sortKey={sortKey} sortDir={sortDir} />
+            </button>
+            <button
+              className="min-w-0 flex-1 cursor-pointer select-none text-left hover:text-foreground"
+              onClick={() => toggleSort("name")}
+            >
+              Name <SortIcon col="name" sortKey={sortKey} sortDir={sortDir} />
+            </button>
+            <div className="hidden w-[80px] shrink-0 sm:block" />
+            <button
+              className="w-20 shrink-0 cursor-pointer select-none text-right hover:text-foreground"
+              onClick={() => toggleSort("currentPrice")}
+            >
+              Price <SortIcon col="currentPrice" sortKey={sortKey} sortDir={sortDir} />
+            </button>
+            <button
+              className="w-16 shrink-0 cursor-pointer select-none text-center hover:text-foreground"
+              onClick={() => toggleSort("dayChange")}
+            >
+              Change <SortIcon col="dayChange" sortKey={sortKey} sortDir={sortDir} />
+            </button>
+            <div className="w-[19px] shrink-0" />
+          </div>
+        )}
         <div className="divide-y">
-          {items.map((w) => {
+          {sorted.map((w) => {
             const positive = w.dayChange >= 0
             return (
               <div

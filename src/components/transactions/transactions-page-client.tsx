@@ -3,7 +3,12 @@
 import { useState, useTransition } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
-import type { TransactionFilters, TransactionPage } from "@/server/queries/transactions"
+import type {
+  TransactionFilters,
+  TransactionPage,
+  TransactionSort,
+  TransactionSortKey,
+} from "@/server/queries/transactions"
 import type { NewTransactionInput } from "@/server/mutations/transactions"
 import type { BankAccount } from "@/lib/types"
 import { TransactionSummary } from "@/components/transactions/transaction-summary"
@@ -21,6 +26,7 @@ export function TransactionsPageClient({
   accounts,
   defaultDate,
   filters,
+  sort,
 }: {
   transactionsPage: TransactionPage
   categories: string[]
@@ -28,6 +34,7 @@ export function TransactionsPageClient({
   accounts: BankAccount[]
   defaultDate: string
   filters: TransactionFilters
+  sort: TransactionSort | undefined
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -66,6 +73,19 @@ export function TransactionsPageClient({
     startTransition(() => {
       router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
     })
+  }
+
+  // Cycles a column through asc -> desc -> off, same as every other sortable
+  // table in the app — but pushed into the `sort`/`dir` searchParams since
+  // this table's rows are server-paginated (see getTransactionsPage).
+  function handleSort(key: TransactionSortKey) {
+    if (sort?.key !== key) {
+      setParams({ sort: key, dir: "asc" })
+    } else if (sort.dir === "asc") {
+      setParams({ sort: key, dir: "desc" })
+    } else {
+      setParams({ sort: undefined, dir: undefined })
+    }
   }
 
   async function handleExport() {
@@ -146,6 +166,9 @@ export function TransactionsPageClient({
           expandedId={expandedId}
           setExpandedId={setExpandedId}
           categoryMeta={categoryMeta}
+          sortKey={sort?.key ?? null}
+          sortDir={sort?.dir ?? null}
+          onSort={handleSort}
         />
 
         <TransactionPagination

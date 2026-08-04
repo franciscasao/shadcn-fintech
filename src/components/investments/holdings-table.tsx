@@ -1,15 +1,9 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
 import { LineChart, Line } from "recharts"
-import {
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-  TrendingUp,
-  TrendingDown,
-} from "lucide-react"
+import { TrendingUp, TrendingDown } from "lucide-react"
 import { motion } from "motion/react"
 import {
   Card,
@@ -27,15 +21,10 @@ import {
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import { holdings as seedHoldings, type Holding } from "@/data/seed"
+import { useTableSort } from "@/hooks/use-table-sort"
+import { SortIcon } from "@/components/sort-icon"
 
-type SortDir = "asc" | "desc" | null
 type SortKey = "name" | "quantity" | "avgBuyPrice" | "currentPrice" | "plPct" | "plDollar"
-
-function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey | null; sortDir: SortDir }) {
-  if (sortKey !== col) return <ArrowUpDown className="ml-1 inline size-3 text-muted-foreground/50" />
-  if (sortDir === "asc") return <ArrowUp className="ml-1 inline size-3" />
-  return <ArrowDown className="ml-1 inline size-3" />
-}
 
 function getPl(h: Holding) {
   const pct = ((h.currentPrice - h.avgBuyPrice) / h.avgBuyPrice) * 100
@@ -50,8 +39,6 @@ export function HoldingsTable() {
     return map
   })
   const [flashMap, setFlashMap] = useState<Record<string, "up" | "down" | null>>({})
-  const [sortKey, setSortKey] = useState<SortKey | null>(null)
-  const [sortDir, setSortDir] = useState<SortDir>(null)
   const prevPrices = useRef<Record<string, number>>({ ...prices })
 
   // Live price simulation
@@ -92,48 +79,25 @@ export function HoldingsTable() {
     [prices]
   )
 
-  const cycleSortDir = useCallback(
-    (key: SortKey) => {
-      if (sortKey !== key) {
-        setSortKey(key)
-        setSortDir("asc")
-      } else if (sortDir === "asc") {
-        setSortDir("desc")
-      } else {
-        setSortKey(null)
-        setSortDir(null)
-      }
-    },
-    [sortKey, sortDir]
-  )
-
-  const sorted = useMemo(() => {
-    if (!sortKey || !sortDir) return holdings
-    const arr = [...holdings]
-    arr.sort((a, b) => {
-      let va: number, vb: number
-      switch (sortKey) {
-        case "name":
-          return sortDir === "asc"
-            ? a.name.localeCompare(b.name)
-            : b.name.localeCompare(a.name)
-        case "quantity":
-          va = a.quantity; vb = b.quantity; break
-        case "avgBuyPrice":
-          va = a.avgBuyPrice; vb = b.avgBuyPrice; break
-        case "currentPrice":
-          va = a.currentPrice; vb = b.currentPrice; break
-        case "plPct":
-          va = getPl(a).pct; vb = getPl(b).pct; break
-        case "plDollar":
-          va = getPl(a).dollar; vb = getPl(b).dollar; break
-        default:
-          return 0
-      }
-      return sortDir === "asc" ? va - vb : vb - va
-    })
-    return arr
-  }, [holdings, sortKey, sortDir])
+  const { sortKey, sortDir, toggleSort: cycleSortDir, sorted } = useTableSort<
+    (typeof holdings)[number],
+    SortKey
+  >(holdings, (a, b, key) => {
+    switch (key) {
+      case "name":
+        return a.name.localeCompare(b.name)
+      case "quantity":
+        return a.quantity - b.quantity
+      case "avgBuyPrice":
+        return a.avgBuyPrice - b.avgBuyPrice
+      case "currentPrice":
+        return a.currentPrice - b.currentPrice
+      case "plPct":
+        return getPl(a).pct - getPl(b).pct
+      case "plDollar":
+        return getPl(a).dollar - getPl(b).dollar
+    }
+  })
 
   return (
     <Card>

@@ -16,6 +16,9 @@ import type { FullTransaction } from "@/data/seed"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { budgetIconMap } from "@/components/budgets/budget-icons"
+import { SortIcon } from "@/components/sort-icon"
+import type { SortDir } from "@/hooks/use-table-sort"
+import type { TransactionSortKey } from "@/server/queries/transactions"
 import {
   Table,
   TableBody,
@@ -38,6 +41,12 @@ interface TransactionTableProps {
   /** Category name -> icon/color, from the managed categories table (see
    * src/server/queries/categories.ts). Missing entries just render as text. */
   categoryMeta: Record<string, { iconName: string; color: string }>
+  /** Sort is server-side (see getTransactionsPage) since `transactions` is
+   * only the current page — sorting client-side here would just reorder
+   * the visible 25 rows instead of the whole filtered set. */
+  sortKey: TransactionSortKey | null
+  sortDir: SortDir
+  onSort: (key: TransactionSortKey) => void
 }
 
 const fmt = (n: number) =>
@@ -70,6 +79,9 @@ export function TransactionTable({
   expandedId,
   setExpandedId,
   categoryMeta,
+  sortKey,
+  sortDir,
+  onSort,
 }: TransactionTableProps) {
   const allSelected =
     filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id))
@@ -114,11 +126,31 @@ export function TransactionTable({
                 className="size-4 cursor-pointer rounded accent-primary"
               />
             </TableHead>
-            <TableHead>Merchant</TableHead>
+            <TableHead
+              className="cursor-pointer select-none"
+              onClick={() => onSort("merchant")}
+            >
+              Merchant <SortIcon col="merchant" sortKey={sortKey} sortDir={sortDir} />
+            </TableHead>
             <TableHead className="hidden sm:table-cell">Transaction ID</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
-            <TableHead className="hidden md:table-cell">Date</TableHead>
-            <TableHead className="hidden lg:table-cell">Status</TableHead>
+            <TableHead
+              className="cursor-pointer select-none text-right"
+              onClick={() => onSort("amount")}
+            >
+              Amount <SortIcon col="amount" sortKey={sortKey} sortDir={sortDir} />
+            </TableHead>
+            <TableHead
+              className="hidden cursor-pointer select-none md:table-cell"
+              onClick={() => onSort("date")}
+            >
+              Date <SortIcon col="date" sortKey={sortKey} sortDir={sortDir} />
+            </TableHead>
+            <TableHead
+              className="hidden cursor-pointer select-none lg:table-cell"
+              onClick={() => onSort("status")}
+            >
+              Status <SortIcon col="status" sortKey={sortKey} sortDir={sortDir} />
+            </TableHead>
             <TableHead className="w-10" />
           </TableRow>
         </TableHeader>

@@ -35,16 +35,36 @@ import {
   type CategoryFormInput,
 } from "@/components/settings/category-dialog"
 import { DeleteCategoryDialog } from "@/components/settings/delete-category-dialog"
+import { useTableSort } from "@/hooks/use-table-sort"
+import { SortIcon } from "@/components/sort-icon"
 import type { Category } from "@/lib/types"
 
 interface CategoriesTabProps {
   categories: Category[]
 }
 
+type SortKey = "name" | "budgetBucket" | "transactionCount"
+
 export function CategoriesTab({ categories }: CategoriesTabProps) {
   const router = useRouter()
   const [dialogTarget, setDialogTarget] = useState<CategoryDialogTarget>(null)
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null)
+
+  const { sortKey, sortDir, toggleSort, sorted } = useTableSort<Category, SortKey>(
+    categories,
+    (a, b, key) => {
+      switch (key) {
+        case "name":
+          return a.name.localeCompare(b.name)
+        case "budgetBucket":
+          // Missing bucket sorts as "" — first ascending, last descending,
+          // same as any other empty value in a text column.
+          return (a.budgetBucket ?? "").localeCompare(b.budgetBucket ?? "")
+        case "transactionCount":
+          return a.transactionCount - b.transactionCount
+      }
+    }
+  )
 
   async function handleCreate(input: CategoryFormInput) {
     const res = await fetch("/api/categories", {
@@ -110,14 +130,29 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Budget bucket</TableHead>
-                  <TableHead className="text-right">Transactions</TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none"
+                    onClick={() => toggleSort("name")}
+                  >
+                    Category <SortIcon col="name" sortKey={sortKey} sortDir={sortDir} />
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none"
+                    onClick={() => toggleSort("budgetBucket")}
+                  >
+                    Budget bucket <SortIcon col="budgetBucket" sortKey={sortKey} sortDir={sortDir} />
+                  </TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none text-right"
+                    onClick={() => toggleSort("transactionCount")}
+                  >
+                    Transactions <SortIcon col="transactionCount" sortKey={sortKey} sortDir={sortDir} />
+                  </TableHead>
                   <TableHead className="w-8" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {categories.map((c) => (
+                {sorted.map((c) => (
                   <TableRow key={c.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">

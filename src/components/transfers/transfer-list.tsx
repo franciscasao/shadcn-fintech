@@ -9,10 +9,18 @@ import { cn } from "@/lib/utils"
 import type { TransferRecord } from "@/data/seed"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { SortIcon } from "@/components/sort-icon"
+import type { SortDir } from "@/hooks/use-table-sort"
+
+export type TransferSortKey = "name" | "amount" | "date" | "status"
+export type TransferSortDir = SortDir
 
 interface TransferListProps {
   transfers: TransferRecord[]
   onCancel: (id: string) => void
+  sortKey: TransferSortKey | null
+  sortDir: TransferSortDir
+  onSort: (key: TransferSortKey) => void
 }
 
 const fmt = (n: number) =>
@@ -41,9 +49,41 @@ function statusBadge(status: TransferRecord["status"]) {
   }
 }
 
-export function TransferList({ transfers, onCancel }: TransferListProps) {
+export function TransferList({ transfers, onCancel, sortKey, sortDir, onSort }: TransferListProps) {
   return (
     <div className="overflow-hidden rounded-xl ring-1 ring-foreground/10">
+      {transfers.length > 0 && (
+        <div className="flex items-center gap-3 border-b bg-muted/40 px-4 py-2 text-xs font-medium text-muted-foreground">
+          <div className="size-10 shrink-0" />
+          <button
+            className="min-w-0 flex-1 cursor-pointer select-none text-left hover:text-foreground"
+            onClick={() => onSort("name")}
+          >
+            Name <SortIcon col="name" sortKey={sortKey} sortDir={sortDir} />
+          </button>
+          <div className="flex shrink-0 flex-col items-end gap-0.5">
+            <button
+              className="cursor-pointer select-none hover:text-foreground"
+              onClick={() => onSort("amount")}
+            >
+              Amount <SortIcon col="amount" sortKey={sortKey} sortDir={sortDir} />
+            </button>
+            <button
+              className="cursor-pointer select-none hover:text-foreground"
+              onClick={() => onSort("date")}
+            >
+              Date <SortIcon col="date" sortKey={sortKey} sortDir={sortDir} />
+            </button>
+          </div>
+          <button
+            className="hidden shrink-0 cursor-pointer select-none text-right hover:text-foreground sm:block"
+            onClick={() => onSort("status")}
+          >
+            Status <SortIcon col="status" sortKey={sortKey} sortDir={sortDir} />
+          </button>
+          <div className="w-16 shrink-0" />
+        </div>
+      )}
       <div className="divide-y">
         <AnimatePresence mode="popLayout" initial={false}>
           {transfers.length === 0 && (

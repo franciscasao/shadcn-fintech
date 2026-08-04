@@ -47,6 +47,8 @@ import {
   TagIcon,
 } from "lucide-react"
 import { CategoriesTab } from "@/components/settings/categories-tab"
+import { useTableSort } from "@/hooks/use-table-sort"
+import { SortIcon } from "@/components/sort-icon"
 import type { Category } from "@/lib/types"
 
 type TabId = "profile" | "security" | "notifications" | "billing" | "appearance" | "categories"
@@ -309,7 +311,21 @@ const proFeatures = [
   "Export to CSV & PDF",
 ]
 
+type InvoiceSortKey = "date" | "status"
+
 function BillingTab() {
+  const { sortKey, sortDir, toggleSort, sorted: sortedInvoices } = useTableSort<
+    (typeof invoices)[number],
+    InvoiceSortKey
+  >(invoices, (a, b, key) => {
+    switch (key) {
+      case "date":
+        return new Date(a.date).getTime() - new Date(b.date).getTime()
+      case "status":
+        return a.status.localeCompare(b.status)
+    }
+  })
+
   return (
     <div className="space-y-6">
       {/* Current Plan */}
@@ -406,14 +422,24 @@ function BillingTab() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Date</TableHead>
+                <TableHead
+                  className="cursor-pointer select-none"
+                  onClick={() => toggleSort("date")}
+                >
+                  Date <SortIcon col="date" sortKey={sortKey} sortDir={sortDir} />
+                </TableHead>
                 <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead
+                  className="cursor-pointer select-none"
+                  onClick={() => toggleSort("status")}
+                >
+                  Status <SortIcon col="status" sortKey={sortKey} sortDir={sortDir} />
+                </TableHead>
                 <TableHead className="text-right">Invoice</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {invoices.map((inv) => (
+              {sortedInvoices.map((inv) => (
                 <TableRow key={inv.id}>
                   <TableCell>{inv.date}</TableCell>
                   <TableCell className="tabular-nums">{inv.amount}</TableCell>

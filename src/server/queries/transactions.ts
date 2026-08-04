@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, sql, type SQL } from "drizzle-orm"
+import { and, asc, desc, eq, inArray, sql, type SQL } from "drizzle-orm"
 
 import { DEMO_USER_ID, getDb } from "@/server/db"
 import { cards, transactions } from "@/server/db/schema"
@@ -13,6 +13,31 @@ export interface TransactionFilters {
   category?: string // undefined/"all" = no filter
   status?: string
   type?: string
+}
+
+export type TransactionSortKey = "merchant" | "amount" | "date" | "status"
+
+export interface TransactionSort {
+  key: TransactionSortKey
+  dir: "asc" | "desc"
+}
+
+const SORT_COLUMNS = {
+  merchant: transactions.merchant,
+  amount: transactions.amount,
+  date: transactions.date,
+  status: transactions.status,
+} as const
+
+/** Builds the `orderBy` list for both the page query and the id query, so
+ * the two can never drift out of sync. `transactions.id` is always the
+ * final tiebreaker — it keeps paging stable when many rows share a sort
+ * value (e.g. the same date), matching the no-sort default below. */
+function buildOrderBy(sort: TransactionSort | undefined) {
+  if (!sort) return [desc(transactions.date), desc(transactions.id)]
+  const column = SORT_COLUMNS[sort.key]
+  const order = sort.dir === "asc" ? asc : desc
+  return [order(column), desc(transactions.id)]
 }
 
 export interface TransactionStats {
@@ -107,11 +132,12 @@ export function clampPageSize(size: number): number {
  * ledger grows — see buildWhere() above. */
 export async function getTransactionsPage(
   filters: TransactionFilters,
-  opts: { page: number; pageSize: number }
+  opts: { page: number; pageSize: number; sort?: TransactionSort }
 ): Promise<TransactionPage> {
   const db = getDb()
   const where = buildWhere(filters)
   const pageSize = clampPageSize(opts.pageSize)
+  const orderBy = buildOrderBy(opts.sort)
 
   const [{ count, totalIn, totalOut, largest }] = db
     .select({
@@ -132,7 +158,7 @@ export async function getTransactionsPage(
     .from(transactions)
     .leftJoin(cards, eq(transactions.cardId, cards.id))
     .where(where)
-    .orderBy(desc(transactions.date), desc(transactions.id))
+    .orderBy(...orderBy)
     .limit(pageSize)
     .offset((page - 1) * pageSize)
     .all()
@@ -141,7 +167,7 @@ export async function getTransactionsPage(
     .select({ id: transactions.id })
     .from(transactions)
     .where(where)
-    .orderBy(desc(transactions.date), desc(transactions.id))
+    .orderBy(...orderBy)
     .all()
 
   return {
