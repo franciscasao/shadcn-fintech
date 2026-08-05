@@ -166,8 +166,8 @@ export function TransactionsPageClient({
           expandedId={expandedId}
           setExpandedId={setExpandedId}
           categoryMeta={categoryMeta}
-          sortKey={sort?.key ?? null}
-          sortDir={sort?.dir ?? null}
+          sortKey={sort?.key ?? "date"}
+          sortDir={sort?.dir ?? "desc"}
           onSort={handleSort}
         />
 

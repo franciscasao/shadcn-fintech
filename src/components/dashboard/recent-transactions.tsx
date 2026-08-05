@@ -50,6 +50,14 @@ export function RecentTransactions({
     }
   )
 
+  // recentTransactions already arrives newest-first (see getRecentTransactions),
+  // so with no explicit sort applied the Date column should still show as the
+  // active descending sort — but the hook's own state must stay untouched, or
+  // clicking Date immediately hits its "turn off" branch and no reordering
+  // happens since the untouched order already looks the same as desc.
+  const displaySortKey = sortKey ?? "date"
+  const displaySortDir = sortDir ?? "desc"
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
@@ -70,25 +78,25 @@ export function RecentTransactions({
                 className="cursor-pointer select-none text-left hover:text-foreground"
                 onClick={() => toggleSort("merchant")}
               >
-                Merchant <SortIcon col="merchant" sortKey={sortKey} sortDir={sortDir} />
+                Merchant <SortIcon col="merchant" sortKey={displaySortKey} sortDir={displaySortDir} />
               </button>
               <button
                 className="hidden cursor-pointer select-none text-left hover:text-foreground sm:inline"
                 onClick={() => toggleSort("transactionId")}
               >
-                Transaction ID <SortIcon col="transactionId" sortKey={sortKey} sortDir={sortDir} />
+                Transaction ID <SortIcon col="transactionId" sortKey={displaySortKey} sortDir={displaySortDir} />
               </button>
               <button
                 className="cursor-pointer select-none text-right hover:text-foreground"
                 onClick={() => toggleSort("amount")}
               >
-                Amount <SortIcon col="amount" sortKey={sortKey} sortDir={sortDir} />
+                Amount <SortIcon col="amount" sortKey={displaySortKey} sortDir={displaySortDir} />
               </button>
               <button
                 className="hidden cursor-pointer select-none text-left hover:text-foreground md:inline"
                 onClick={() => toggleSort("date")}
               >
-                Date <SortIcon col="date" sortKey={sortKey} sortDir={sortDir} />
+                Date <SortIcon col="date" sortKey={displaySortKey} sortDir={displaySortDir} />
               </button>
               <span />
             </div>

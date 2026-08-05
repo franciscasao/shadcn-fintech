@@ -22,7 +22,11 @@ const SORT_KEYS: TransactionSortKey[] = ["merchant", "amount", "date", "status"]
 
 /** Validates the `sort`/`dir` searchParams against the allowed columns —
  * these values reach a SQL `orderBy`, so anything outside this list is
- * rejected rather than passed through. */
+ * rejected rather than passed through. Returns undefined when absent —
+ * getTransactionsPage's own no-sort default already orders newest-first,
+ * and the client keeps this distinct from an explicit date-desc sort so
+ * clicking Date while on the default has an asc/desc cycle to move through
+ * instead of "turning off" a sort that was never turned on. */
 function parseSort(sp: { [key: string]: string | string[] | undefined }): TransactionSort | undefined {
   const key = first(sp.sort)
   const dir = first(sp.dir)
