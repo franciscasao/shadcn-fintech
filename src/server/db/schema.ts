@@ -101,6 +101,17 @@ export const cards = sqliteTable("cards", {
   monthlyLimit: real("monthly_limit").notNull(),
   color: text("color").notNull(),
   createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),
+
+  // ── Issuing bank (see @/lib/ph-cards + @/lib/ph-institutions) ───────────
+  // accountId is the funding account when the card was issued from a linked
+  // account (nullable — credit cards need no funding account). issuer/
+  // issuerLogo are always populated (from the template, or user-entered for
+  // the "custom issuer" escape hatch); issuerTemplateId is null in that case.
+  accountId: integer("account_id").references(() => accounts.id),
+  issuer: text("issuer").notNull().default(""),
+  issuerLogo: text("issuer_logo").notNull().default(""),
+  issuerTemplateId: text("issuer_template_id"),
+  product: text("product", { enum: ["debit", "credit", "prepaid"] }).notNull().default("debit"),
 })
 
 // ── Transactions (the ledger) ───────────────────────────────────────────────
@@ -200,10 +211,12 @@ export const savingsGoals = sqliteTable("savings_goals", {
 // ── Relations (used for FK joins in the query layer) ────────────────────────
 export const accountsRelations = relations(accounts, ({ many }) => ({
   transactions: many(transactions),
+  cards: many(cards),
 }))
 
-export const cardsRelations = relations(cards, ({ many }) => ({
+export const cardsRelations = relations(cards, ({ one, many }) => ({
   transactions: many(transactions),
+  account: one(accounts, { fields: [cards.accountId], references: [accounts.id] }),
 }))
 
 export const contactsRelations = relations(contacts, ({ many }) => ({

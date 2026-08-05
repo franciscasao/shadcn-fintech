@@ -135,63 +135,123 @@ export const accountFixtures: Omit<BankAccount, "id">[] = [
 ]
 
 // ── Cards ────────────────────────────────────────────────────────────────────
-export const cardFixtures: Omit<CardData, "id" | "monthlySpend">[] = [
-  {
+// Issuer fields (issuer name, logo, color) are pulled from the PH
+// institution registry (@/lib/ph-institutions), same as accountFixtures
+// above, so the seed data and the "issue a card" templates never drift
+// apart. `accountName` is resolved to a funding-account id in seed.ts —
+// null for credit cards, which draw on a credit line rather than a
+// deposit account.
+type CardFixtureOverrides = {
+  name: string
+  last4: string
+  cardNumber: string
+  expiry: string
+  cvv: string
+  network: CardData["network"]
+  type: CardData["type"]
+  product: CardData["product"]
+  frozen?: boolean
+  dailyLimit: number
+  monthlyLimit: number
+  accountName: string | null
+}
+
+function cardFromTemplate(
+  templateId: string,
+  overrides: CardFixtureOverrides
+): Omit<CardData, "id" | "monthlySpend" | "accountId"> & { accountName: string | null } {
+  const t = getInstitution(templateId)
+  if (!t) throw new Error(`Unknown institution template: ${templateId}`)
+  return {
+    name: overrides.name,
+    type: overrides.type,
+    last4: overrides.last4,
+    cardNumber: overrides.cardNumber,
+    holder: "ALEX MORGAN",
+    expiry: overrides.expiry,
+    cvv: overrides.cvv,
+    network: overrides.network,
+    frozen: overrides.frozen ?? false,
+    dailyLimit: overrides.dailyLimit,
+    monthlyLimit: overrides.monthlyLimit,
+    color: t.color,
+    accountName: overrides.accountName,
+    issuer: t.name,
+    issuerLogo: t.logo,
+    issuerTemplateId: t.id,
+    product: overrides.product,
+  }
+}
+
+export const cardFixtures: (Omit<CardData, "id" | "monthlySpend" | "accountId"> & {
+  accountName: string | null
+})[] = [
+  cardFromTemplate("bpi", {
     name: "Main Debit",
     type: "physical",
+    product: "debit",
     last4: "4589",
     cardNumber: "**** **** **** 4589",
-    holder: "ALEX MORGAN",
     expiry: "09/28",
     cvv: "317",
     network: "visa",
-    frozen: false,
     dailyLimit: 5000,
     monthlyLimit: 10000,
-    color: "bg-primary text-primary-foreground",
-  },
-  {
+    accountName: "Primary Checking",
+  }),
+  cardFromTemplate("metrobank", {
     name: "Travel Credit",
     type: "physical",
+    product: "credit",
     last4: "7321",
     cardNumber: "**** **** **** 7321",
-    holder: "ALEX MORGAN",
     expiry: "03/27",
     cvv: "892",
     network: "mastercard",
-    frozen: false,
     dailyLimit: 3000,
     monthlyLimit: 8000,
-    color: "bg-secondary text-secondary-foreground",
-  },
-  {
+    accountName: null,
+  }),
+  cardFromTemplate("maya-bank", {
     name: "Virtual Shopping",
     type: "virtual",
+    product: "debit",
     last4: "9012",
     cardNumber: "**** **** **** 9012",
-    holder: "ALEX MORGAN",
     expiry: "12/26",
     cvv: "445",
     network: "visa",
-    frozen: false,
     dailyLimit: 1000,
     monthlyLimit: 3000,
-    color: "bg-muted text-foreground",
-  },
-  {
+    accountName: "Travel Fund",
+  }),
+  cardFromTemplate("bdo", {
     name: "Business Expense",
     type: "physical",
+    product: "credit",
     last4: "3456",
     cardNumber: "**** **** **** 3456",
-    holder: "ALEX MORGAN",
     expiry: "06/29",
     cvv: "661",
     network: "mastercard",
     frozen: true,
     dailyLimit: 10000,
     monthlyLimit: 25000,
-    color: "bg-card text-card-foreground ring-1 ring-border",
-  },
+    accountName: null,
+  }),
+  cardFromTemplate("gcash", {
+    name: "GCash Virtual",
+    type: "virtual",
+    product: "prepaid",
+    last4: "2201",
+    cardNumber: "**** **** **** 2201",
+    expiry: "01/29",
+    cvv: "530",
+    network: "mastercard",
+    dailyLimit: 1000,
+    monthlyLimit: 3000,
+    accountName: "GCash Wallet",
+  }),
 ]
 
 // ── Transfers (contactName is resolved to a contact id in seed.ts; all

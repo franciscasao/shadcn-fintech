@@ -1,8 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import Image from "next/image"
-import { BuildingIcon, PlusCircleIcon } from "lucide-react"
+import { PlusCircleIcon } from "lucide-react"
 
 import {
   Command,
@@ -13,35 +11,8 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import { formatRate } from "@/lib/interest"
-import {
-  INSTITUTION_GROUPS,
-  PH_INSTITUTIONS,
-  type InstitutionTemplate,
-} from "@/lib/ph-institutions"
-
-function InstitutionLogo({ template }: { template: InstitutionTemplate }) {
-  const [error, setError] = useState(false)
-
-  if (error) {
-    return (
-      <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-muted">
-        <BuildingIcon className="size-3.5 text-muted-foreground" />
-      </div>
-    )
-  }
-
-  return (
-    <Image
-      src={template.logo}
-      alt=""
-      width={24}
-      height={24}
-      unoptimized
-      className="size-6 shrink-0 rounded-full bg-muted object-cover"
-      onError={() => setError(true)}
-    />
-  )
-}
+import { INSTITUTION_GROUPS, PH_INSTITUTIONS, type InstitutionTemplate } from "@/lib/ph-institutions"
+import { InstitutionLogo } from "@/components/accounts/institution-logo"
 
 interface InstitutionPickerProps {
   /** `null` means the user picked "Custom institution" rather than a template. */
@@ -65,7 +36,7 @@ export function InstitutionPicker({ onSelect }: InstitutionPickerProps) {
                   value={template.name}
                   onSelect={() => onSelect(template)}
                 >
-                  <InstitutionLogo template={template} />
+                  <InstitutionLogo src={template.logo} />
                   <span className="flex-1 truncate">{template.name}</span>
                   {template.interestRate != null && (
                     <span className="shrink-0 text-xs tabular-nums text-muted-foreground">

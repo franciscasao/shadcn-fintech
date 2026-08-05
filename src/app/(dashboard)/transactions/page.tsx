@@ -7,6 +7,7 @@ import {
 } from "@/server/queries/transactions"
 import { getCategories } from "@/server/queries/categories"
 import { getAccounts } from "@/server/queries/accounts"
+import { getCards } from "@/server/queries/cards"
 import { LEDGER_ANCHOR } from "@/server/db/generate"
 import { toISODate } from "@/server/db/format"
 import { TransactionsPageClient } from "@/components/transactions/transactions-page-client"
@@ -51,10 +52,11 @@ export default async function Page({
   const pageSize = clampPageSize(Number(first(sp.size)) || 25)
   const sort = parseSort(sp)
 
-  const [transactionsPage, categories, accounts] = await Promise.all([
+  const [transactionsPage, categories, accounts, cards] = await Promise.all([
     getTransactionsPage(filters, { page, pageSize, sort }),
     getCategories(),
     getAccounts(),
+    getCards(),
   ])
   const categoryNames = categories.map((c) => c.name)
   const categoryMeta = Object.fromEntries(
@@ -68,6 +70,7 @@ export default async function Page({
         categories={categoryNames}
         categoryMeta={categoryMeta}
         accounts={accounts}
+        cards={cards}
         defaultDate={toISODate(LEDGER_ANCHOR)}
         filters={filters}
         sort={sort}

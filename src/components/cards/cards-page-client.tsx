@@ -3,13 +3,20 @@
 import { useCallback, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 
-import type { CardData } from "@/lib/types"
+import type { BankAccount, CardData } from "@/lib/types"
+import type { NewCardInput } from "@/lib/ph-cards"
 import { InteractiveCard } from "@/components/cards/interactive-card"
 import { CardControls } from "@/components/cards/card-controls"
-import { VirtualCardGenerator, type NewVirtualCardInput } from "@/components/cards/virtual-card-generator"
+import { IssueCard } from "@/components/cards/issue-card"
 import { CardList } from "@/components/cards/card-list"
 
-export function CardsPageClient({ initialCards }: { initialCards: CardData[] }) {
+interface CardsPageClientProps {
+  initialCards: CardData[]
+  accounts: BankAccount[]
+  holderName: string
+}
+
+export function CardsPageClient({ initialCards, accounts, holderName }: CardsPageClientProps) {
   const router = useRouter()
   const cards = initialCards
   const [activeCardId, setActiveCardId] = useState<string>(initialCards[0]?.id)
@@ -50,16 +57,20 @@ export function CardsPageClient({ initialCards }: { initialCards: CardData[] }) 
   )
 
   const handleCardCreated = useCallback(
-    async (input: NewVirtualCardInput) => {
+    async (input: NewCardInput) => {
       const res = await fetch("/api/cards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
       })
-      if (!res.ok) throw new Error("Failed to create card")
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error ?? "Failed to create card")
+      }
       const card: CardData = await res.json()
       setActiveCardId(card.id)
       router.refresh()
+      return card
     },
     [router]
   )
@@ -83,10 +94,10 @@ export function CardsPageClient({ initialCards }: { initialCards: CardData[] }) 
         </div>
       </div>
 
-      {/* Row 2: Virtual card generator + card list */}
+      {/* Row 2: Issue-card panel + card list */}
       <div className="grid gap-6 lg:grid-cols-12">
         <div className="lg:col-span-4">
-          <VirtualCardGenerator onCardCreated={handleCardCreated} />
+          <IssueCard accounts={accounts} holderName={holderName} onCardCreated={handleCardCreated} />
         </div>
         <div className="lg:col-span-8">
           <CardList

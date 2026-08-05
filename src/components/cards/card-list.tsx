@@ -2,7 +2,8 @@
 
 import Image from "next/image"
 import { cn } from "@/lib/utils"
-import type { CardData } from "@/data/seed"
+import { InstitutionLogo } from "@/components/accounts/institution-logo"
+import type { CardData } from "@/lib/types"
 
 interface CardListProps {
   cards: CardData[]
@@ -45,16 +46,19 @@ export function CardList({
             )}
           >
             <div className="flex h-full flex-col justify-between">
-              <div className="flex items-start justify-between">
-                <span className="text-xs font-medium leading-tight">
-                  {card.name}
-                </span>
+              <div className="flex items-start justify-between gap-1">
+                <div className="flex items-center gap-1 min-w-0">
+                  {card.issuerLogo && <InstitutionLogo src={card.issuerLogo} size={14} />}
+                  <span className="truncate text-xs font-medium leading-tight">
+                    {card.name}
+                  </span>
+                </div>
                 <Image
                   src={card.network === "visa" ? "/logos/visa-com.svg" : "/logos/mastercard-com.svg"}
                   alt={card.network}
                   width={32}
                   height={20}
-                  className="h-5 w-auto object-contain"
+                  className="h-5 w-auto shrink-0 object-contain"
                 />
               </div>
               <div>

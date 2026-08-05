@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm"
 
 import { DEMO_USER_ID, getDb } from "@/server/db"
-import { accounts, transactions } from "@/server/db/schema"
+import { accounts, cards, transactions } from "@/server/db/schema"
 import { displayDate } from "@/server/db/format"
 import type { FullTransaction } from "@/lib/types"
 
@@ -12,6 +12,8 @@ export type NewTransactionInput = {
   category: string
   date: string // ISO yyyy-MM-dd
   accountId: number
+  /** Card the purchase was made with — display-only, doesn't affect account balance. */
+  cardId?: number
   status: "completed" | "pending" | "failed"
   notes?: string
 }
@@ -32,15 +34,27 @@ export async function createTransaction(input: NewTransactionInput): Promise<Ful
   // is both the stored amount and the balance delta below.
   const signed = input.type === "expense" ? -Math.abs(input.amount) : Math.abs(input.amount)
 
-  const row = db.transaction((tx) => {
+  const { row, cardLast4 } = db.transaction((tx) => {
     const account = tx.select().from(accounts).where(eq(accounts.id, input.accountId)).get()
     if (!account) throw new Error(`Account ${input.accountId} not found`)
+
+    let cardId: number | null = null
+    let cardLast4: string | undefined
+    if (input.cardId != null) {
+      const card = tx.select().from(cards).where(eq(cards.id, input.cardId)).get()
+      if (!card || card.userId !== DEMO_USER_ID) {
+        throw new Error(`Card ${input.cardId} not found`)
+      }
+      cardId = card.id
+      cardLast4 = card.last4
+    }
 
     const [inserted] = tx
       .insert(transactions)
       .values({
         userId: DEMO_USER_ID,
         accountId: input.accountId,
+        cardId,
         merchant: input.merchant,
         transactionId: generateTransactionId(),
         amount: signed,
@@ -59,7 +73,7 @@ export async function createTransaction(input: NewTransactionInput): Promise<Ful
       .where(eq(accounts.id, input.accountId))
       .run()
 
-    return inserted
+    return { row: inserted, cardLast4 }
   })
 
   return {
@@ -74,5 +88,6 @@ export async function createTransaction(input: NewTransactionInput): Promise<Ful
     type: row.type,
     notes: row.notes ?? undefined,
     merchantInfo: row.merchantInfo ?? undefined,
+    cardLast4,
   }
 }

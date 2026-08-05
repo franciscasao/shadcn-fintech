@@ -38,6 +38,7 @@ export async function POST(request: Request) {
     category,
     date,
     accountId,
+    cardId,
     status,
     notes,
   } = body ?? {}
@@ -61,6 +62,13 @@ export async function POST(request: Request) {
   if (!Number.isInteger(resolvedAccountId)) {
     return badRequest("accountId is required")
   }
+  let resolvedCardId: number | undefined
+  if (cardId !== undefined && cardId !== null && cardId !== "") {
+    resolvedCardId = Number(cardId)
+    if (!Number.isInteger(resolvedCardId) || resolvedCardId <= 0) {
+      return badRequest("cardId must be a positive integer")
+    }
+  }
   if (!STATUSES.includes(status)) {
     return badRequest("status must be one of completed, pending, failed")
   }
@@ -75,6 +83,7 @@ export async function POST(request: Request) {
     category: category.trim(),
     date,
     accountId: resolvedAccountId,
+    cardId: resolvedCardId,
     status,
     notes: typeof notes === "string" && notes.trim() ? notes.trim() : undefined,
   }

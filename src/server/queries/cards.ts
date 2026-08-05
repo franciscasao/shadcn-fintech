@@ -1,7 +1,7 @@
 import { and, eq, gte, lt, sql } from "drizzle-orm"
 
 import { DEMO_USER_ID, getDb } from "@/server/db"
-import { cards, transactions } from "@/server/db/schema"
+import { accounts, cards, transactions } from "@/server/db/schema"
 import { LEDGER_ANCHOR } from "@/server/db/generate"
 import { toISODate } from "@/server/db/format"
 import type { CardData } from "@/lib/types"
@@ -12,9 +12,43 @@ function currentMonthBounds() {
   return { start: toISODate(start), end: toISODate(end) }
 }
 
+/** Shared row -> API-shape mapper, also used by @/server/mutations/cards. */
+export function toCardData(
+  row: typeof cards.$inferSelect,
+  extra: { monthlySpend: number; accountName: string | null }
+): CardData {
+  return {
+    id: String(row.id),
+    name: row.name,
+    type: row.type,
+    last4: row.last4,
+    cardNumber: row.cardNumber,
+    holder: row.holder,
+    expiry: row.expiry,
+    cvv: row.cvv,
+    network: row.network,
+    frozen: row.frozen,
+    dailyLimit: row.dailyLimit,
+    monthlySpend: extra.monthlySpend,
+    monthlyLimit: row.monthlyLimit,
+    color: row.color,
+    accountId: row.accountId != null ? String(row.accountId) : null,
+    accountName: extra.accountName,
+    issuer: row.issuer,
+    issuerLogo: row.issuerLogo,
+    issuerTemplateId: row.issuerTemplateId,
+    product: row.product,
+  }
+}
+
 export async function getCards(): Promise<CardData[]> {
   const db = getDb()
-  const rows = db.select().from(cards).where(eq(cards.userId, DEMO_USER_ID)).all()
+  const rows = db
+    .select({ card: cards, accountName: accounts.name })
+    .from(cards)
+    .leftJoin(accounts, eq(cards.accountId, accounts.id))
+    .where(eq(cards.userId, DEMO_USER_ID))
+    .all()
 
   const { start, end } = currentMonthBounds()
   const spendRows = db
@@ -35,20 +69,10 @@ export async function getCards(): Promise<CardData[]> {
     .all()
   const spendByCard = new Map(spendRows.map((r) => [r.cardId, r.total]))
 
-  return rows.map((c) => ({
-    id: String(c.id),
-    name: c.name,
-    type: c.type,
-    last4: c.last4,
-    cardNumber: c.cardNumber,
-    holder: c.holder,
-    expiry: c.expiry,
-    cvv: c.cvv,
-    network: c.network,
-    frozen: c.frozen,
-    dailyLimit: c.dailyLimit,
-    monthlySpend: Math.round((spendByCard.get(c.id) ?? 0) * 100) / 100,
-    monthlyLimit: c.monthlyLimit,
-    color: c.color,
-  }))
+  return rows.map(({ card, accountName }) =>
+    toCardData(card, {
+      monthlySpend: Math.round((spendByCard.get(card.id) ?? 0) * 100) / 100,
+      accountName: accountName ?? null,
+    })
+  )
 }

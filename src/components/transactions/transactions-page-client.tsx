@@ -10,7 +10,7 @@ import type {
   TransactionSortKey,
 } from "@/server/queries/transactions"
 import type { NewTransactionInput } from "@/server/mutations/transactions"
-import type { BankAccount } from "@/lib/types"
+import type { BankAccount, CardData } from "@/lib/types"
 import { TransactionSummary } from "@/components/transactions/transaction-summary"
 import { TransactionFilters as TransactionFiltersBar } from "@/components/transactions/transaction-filters"
 import { TransactionTable } from "@/components/transactions/transaction-table"
@@ -24,6 +24,7 @@ export function TransactionsPageClient({
   categories,
   categoryMeta,
   accounts,
+  cards,
   defaultDate,
   filters,
   sort,
@@ -32,6 +33,7 @@ export function TransactionsPageClient({
   categories: string[]
   categoryMeta: Record<string, { iconName: string; color: string }>
   accounts: BankAccount[]
+  cards: CardData[]
   defaultDate: string
   filters: TransactionFilters
   sort: TransactionSort | undefined
@@ -192,6 +194,7 @@ export function TransactionsPageClient({
         onOpenChange={setAddOpen}
         categories={categories}
         accounts={accounts}
+        cards={cards}
         defaultDate={defaultDate}
         onAdd={handleAddTransaction}
       />

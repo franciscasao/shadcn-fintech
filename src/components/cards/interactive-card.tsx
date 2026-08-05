@@ -5,7 +5,8 @@ import Image from "next/image"
 import { motion, AnimatePresence } from "motion/react"
 import { SnowflakeIcon, WifiIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { CardData } from "@/data/seed"
+import { InstitutionLogo } from "@/components/accounts/institution-logo"
+import type { CardData } from "@/lib/types"
 
 interface InteractiveCardProps {
   card: CardData
@@ -41,7 +42,15 @@ export function InteractiveCard({
         >
           {/* Top row */}
           <div className="flex items-start justify-between">
-            <span className="text-sm font-medium">{card.name}</span>
+            <div className="flex items-center gap-2">
+              {card.issuerLogo && <InstitutionLogo src={card.issuerLogo} size={22} />}
+              <div className="flex flex-col">
+                <span className="text-sm font-medium leading-tight">{card.issuer || card.name}</span>
+                {card.issuer && (
+                  <span className="text-[10px] leading-tight opacity-70">{card.name}</span>
+                )}
+              </div>
+            </div>
             <Image
               src={card.network === "visa" ? "/logos/visa-com.svg" : "/logos/mastercard-com.svg"}
               alt={card.network}

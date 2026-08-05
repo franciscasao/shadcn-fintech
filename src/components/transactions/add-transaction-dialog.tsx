@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { BankAccount } from "@/lib/types"
+import type { BankAccount, CardData } from "@/lib/types"
 import type { NewTransactionInput } from "@/server/mutations/transactions"
 
 interface AddTransactionDialogProps {
@@ -29,6 +29,7 @@ interface AddTransactionDialogProps {
   onOpenChange: (open: boolean) => void
   categories: string[]
   accounts: BankAccount[]
+  cards: CardData[]
   /** ISO yyyy-MM-dd the date field defaults to — the ledger's "today"
    * (LEDGER_ANCHOR), not the real calendar date; see @/server/db/generate. */
   defaultDate: string
@@ -44,6 +45,11 @@ const STATUS_LABELS: Record<Status, string> = {
   failed: "Failed",
 }
 
+// Select can't carry an empty-string value (its onValueChange guard treats
+// "" as "no change" — see the account/category selects below), so "no card"
+// needs its own sentinel value distinct from a real card id.
+const NO_CARD = "none"
+
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="flex flex-col gap-1">
@@ -58,6 +64,7 @@ export function AddTransactionDialog({
   onOpenChange,
   categories,
   accounts,
+  cards,
   defaultDate,
   onAdd,
 }: AddTransactionDialogProps) {
@@ -67,6 +74,7 @@ export function AddTransactionDialog({
   const [category, setCategory] = useState("")
   const [date, setDate] = useState(defaultDate)
   const [accountId, setAccountId] = useState("")
+  const [cardId, setCardId] = useState(NO_CARD)
   const [status, setStatus] = useState<Status>("completed")
   const [notes, setNotes] = useState("")
 
@@ -83,6 +91,7 @@ export function AddTransactionDialog({
       setCategory("")
       setDate(defaultDate)
       setAccountId("")
+      setCardId(NO_CARD)
       setStatus("completed")
       setNotes("")
       setError(null)
@@ -117,6 +126,7 @@ export function AddTransactionDialog({
         category,
         date,
         accountId: Number(accountId),
+        cardId: cardId !== NO_CARD ? Number(cardId) : undefined,
         status,
         notes: notes.trim() || undefined,
       })
@@ -231,6 +241,31 @@ export function AddTransactionDialog({
               </Select>
             </Field>
           </div>
+
+          <Field label="Card (optional)">
+            <Select value={cardId} onValueChange={(v) => v && setCardId(v)}>
+              <SelectTrigger className="w-full">
+                <SelectValue>
+                  {(v: string) =>
+                    v === NO_CARD
+                      ? "No card"
+                      : (() => {
+                          const c = cards.find((c) => c.id === v)
+                          return c ? `${c.name} •••• ${c.last4}` : "No card"
+                        })()
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_CARD}>No card</SelectItem>
+                {cards.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name} •••• {c.last4}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
 
           <Field label="Notes (optional)">
             <Textarea

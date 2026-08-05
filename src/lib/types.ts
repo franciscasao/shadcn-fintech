@@ -51,6 +51,13 @@ export type FullTransaction = {
 }
 
 // ── Cards page ───────────────────────────────────────────────────────────────
+// Shared with @/lib/ph-cards (the card-issuing-rules registry). Defined
+// here, not there, so CardData can reference them without a
+// types.ts <-> ph-cards.ts import cycle — same pattern as InstitutionKind
+// below, shared with @/lib/ph-institutions.
+export type CardNetwork = "visa" | "mastercard"
+export type CardProduct = "debit" | "credit" | "prepaid"
+
 export type CardData = {
   id: string
   name: string
@@ -60,12 +67,19 @@ export type CardData = {
   holder: string
   expiry: string
   cvv: string
-  network: "visa" | "mastercard"
+  network: CardNetwork
   frozen: boolean
   dailyLimit: number
   monthlySpend: number
   monthlyLimit: number
   color: string
+  // Issuing bank (PH institution registry) this card was issued from.
+  accountId: string | null
+  accountName: string | null
+  issuer: string
+  issuerLogo: string
+  issuerTemplateId: string | null
+  product: CardProduct
 }
 
 // ── Analytics page ──────────────────────────────────────────────────────────

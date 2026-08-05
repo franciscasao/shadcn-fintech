@@ -5,6 +5,7 @@ import { Switch } from "@/components/ui/switch"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { CARD_PRODUCT_LABELS } from "@/lib/ph-cards"
 import type { CardData } from "@/lib/types"
 
 interface CardControlsProps {
@@ -128,6 +129,7 @@ export function CardControls({
             <Badge variant={card.type === "virtual" ? "secondary" : "outline"}>
               {card.type}
             </Badge>
+            <Badge variant="outline">{CARD_PRODUCT_LABELS[card.product]}</Badge>
             <Badge variant="outline" className="uppercase">
               {card.network}
             </Badge>
@@ -135,6 +137,13 @@ export function CardControls({
               **** {card.last4}
             </span>
           </div>
+          {(card.issuer || card.accountName) && (
+            <p className="text-xs text-muted-foreground">
+              {card.issuer && <>Issued by {card.issuer}</>}
+              {card.issuer && card.accountName && " · "}
+              {card.accountName && <>Funding account: {card.accountName}</>}
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>

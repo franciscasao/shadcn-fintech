@@ -66,7 +66,13 @@ async function main() {
   const insertedCards = db
     .insert(schema.cards)
     .values(
-      cardFixtures.map((c) => ({ ...c, monthlySpend: 0, userId: DEMO_USER_ID }))
+      cardFixtures.map(({ accountName, ...c }) => {
+        const accountId = accountName ? accountIdByName.get(accountName) ?? null : null
+        if (accountName && accountId == null) {
+          throw new Error(`Unknown card funding account: ${accountName}`)
+        }
+        return { ...c, monthlySpend: 0, accountId, userId: DEMO_USER_ID }
+      })
     )
     .returning()
     .all()
