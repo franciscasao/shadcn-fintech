@@ -1,8 +1,9 @@
-import { and, asc, desc, eq, inArray, sql, type SQL } from "drizzle-orm"
+import { and, asc, desc, eq, gte, inArray, lt, sql, type SQL } from "drizzle-orm"
 
 import { DEMO_USER_ID, getDb } from "@/server/db"
 import { cards, transactions } from "@/server/db/schema"
-import { displayDate } from "@/server/db/format"
+import { displayDate, toISODate } from "@/server/db/format"
+import { getCategoryNamesForBucket } from "@/server/queries/categories"
 import type { FullTransaction, Transaction } from "@/lib/types"
 
 const PAGE_SIZES = [10, 25, 50, 100] as const
@@ -13,6 +14,17 @@ export interface TransactionFilters {
   category?: string // undefined/"all" = no filter
   status?: string
   type?: string
+  bucket?: string // budget bucket name — resolved to underlying category names, see buildWhere
+  month?: string // "YYYY-MM" — scopes to that calendar month
+}
+
+/** First-of-month / first-of-next-month ISO bounds for a "YYYY-MM" filter
+ * value, mirroring currentMonthBounds() in src/server/queries/budgets.ts. */
+function monthBounds(month: string): { start: string; end: string } {
+  const [year, mon] = month.split("-").map(Number)
+  const start = `${month}-01`
+  const end = toISODate(new Date(year, mon, 1)) // `mon` (1-12) as the 0-indexed month arg is next month
+  return { start, end }
 }
 
 export type TransactionSortKey = "merchant" | "amount" | "date" | "status"
@@ -84,8 +96,10 @@ function escapeLike(value: string): string {
 }
 
 /** Shared predicate for the page query, the aggregate query, and the id
- * query, so the three can never drift out of sync with each other. */
-function buildWhere(filters: TransactionFilters): SQL {
+ * query, so the three can never drift out of sync with each other.
+ * `bucketCategoryNames` is resolved by the caller (it needs an async lookup
+ * against the categories table) — see getTransactionsPage. */
+function buildWhere(filters: TransactionFilters, bucketCategoryNames?: string[]): SQL {
   const conds = [eq(transactions.userId, DEMO_USER_ID)]
 
   if (filters.search) {
@@ -118,6 +132,22 @@ function buildWhere(filters: TransactionFilters): SQL {
     )
   }
 
+  if (filters.bucket) {
+    // A bucket that (somehow) resolves to no categories should match
+    // nothing, not fall through to "no filter" — hence the always-false
+    // fallback instead of skipping the condition.
+    conds.push(
+      bucketCategoryNames && bucketCategoryNames.length > 0
+        ? inArray(transactions.category, bucketCategoryNames)
+        : sql`0`
+    )
+  }
+
+  if (filters.month) {
+    const { start, end } = monthBounds(filters.month)
+    conds.push(gte(transactions.date, start), lt(transactions.date, end))
+  }
+
   return and(...conds)!
 }
 
@@ -135,7 +165,10 @@ export async function getTransactionsPage(
   opts: { page: number; pageSize: number; sort?: TransactionSort }
 ): Promise<TransactionPage> {
   const db = getDb()
-  const where = buildWhere(filters)
+  const bucketCategoryNames = filters.bucket
+    ? await getCategoryNamesForBucket(filters.bucket)
+    : undefined
+  const where = buildWhere(filters, bucketCategoryNames)
   const pageSize = clampPageSize(opts.pageSize)
   const orderBy = buildOrderBy(opts.sort)
 

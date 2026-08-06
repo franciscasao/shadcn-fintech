@@ -55,3 +55,19 @@ export async function getBudgetBucketMap(): Promise<Record<string, string>> {
   }
   return map
 }
+
+/** Category names that roll up into a given budget bucket — the inverse of
+ * getBudgetBucketMap, with the same fallback getSpentByBucket uses
+ * (src/server/queries/budgets.ts): a category with no bucket mapping (null
+ * budgetBucket, or no matching row at all) is treated as its own bucket. So
+ * a category named exactly like the bucket is included only when it isn't
+ * itself mapped to some other bucket. Powers the "view transactions" link
+ * from a budget ring to the Transactions page's ?bucket= filter. */
+export async function getCategoryNamesForBucket(bucket: string): Promise<string[]> {
+  const bucketMap = await getBudgetBucketMap()
+  const names = Object.entries(bucketMap)
+    .filter(([, b]) => b === bucket)
+    .map(([name]) => name)
+  if (!(bucket in bucketMap)) names.push(bucket)
+  return names
+}

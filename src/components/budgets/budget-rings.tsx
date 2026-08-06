@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,7 +14,13 @@ import { AddBudget, type NewBudgetInput } from "@/components/budgets/add-budget"
 const RADIUS = 40
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
-export function BudgetRings({ budgetCategories }: { budgetCategories: BudgetCategory[] }) {
+export function BudgetRings({
+  budgetCategories,
+  month,
+}: {
+  budgetCategories: BudgetCategory[]
+  month: string
+}) {
   const router = useRouter()
 
   async function handleAddBudget(input: NewBudgetInput) {
@@ -39,9 +46,18 @@ export function BudgetRings({ budgetCategories }: { budgetCategories: BudgetCate
             const percent = b.budget > 0 ? Math.min((b.spent / b.budget) * 100, 100) : 0
             const offset = CIRCUMFERENCE - (percent / 100) * CIRCUMFERENCE
             const isOver = b.spent > b.budget
+            const href = `/transactions?${new URLSearchParams({
+              bucket: b.category,
+              month,
+              type: "expense",
+            }).toString()}`
 
             return (
-              <div key={b.id} className="flex flex-col items-center gap-2">
+              <Link
+                key={b.id}
+                href={href}
+                className="flex flex-col items-center gap-2 rounded-lg p-2 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
                 <div className="relative size-24">
                   <svg viewBox="0 0 100 100" className="size-full -rotate-90">
                     {/* Track */}
@@ -106,7 +122,7 @@ export function BudgetRings({ budgetCategories }: { budgetCategories: BudgetCate
                     </span>
                   </p>
                 </div>
-              </div>
+              </Link>
             )
           })}
           <AddBudget onAdd={handleAddBudget} />

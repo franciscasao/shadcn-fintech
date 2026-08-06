@@ -13,6 +13,13 @@ function currentMonthBounds() {
   return { start: toISODate(start), end: toISODate(end) }
 }
 
+/** "YYYY-MM" for the same calendar month getSpentByBucket sums over — passed
+ * to BudgetRings so its "view transactions" links scope to the exact month
+ * behind each ring's spent total (see TransactionFilters.month). */
+export function currentBudgetMonth(): string {
+  return toISODate(LEDGER_ANCHOR).slice(0, 7)
+}
+
 /** Sum of expense amounts this calendar month, grouped by budget bucket
  * (fine-grained transaction categories collapsed via the categories table's
  * budgetBucket column — see src/server/queries/categories.ts). */

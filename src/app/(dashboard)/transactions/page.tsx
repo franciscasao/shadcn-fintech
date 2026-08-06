@@ -20,6 +20,7 @@ function first(value: string | string[] | undefined): string | undefined {
 }
 
 const SORT_KEYS: TransactionSortKey[] = ["merchant", "amount", "date", "status"]
+const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/
 
 /** Validates the `sort`/`dir` searchParams against the allowed columns —
  * these values reach a SQL `orderBy`, so anything outside this list is
@@ -42,11 +43,18 @@ export default async function Page({
 }) {
   const sp = await searchParams
 
+  // Validated before reaching SQL, same posture as parseSort below — an
+  // out-of-shape month would otherwise land in a raw string comparison.
+  const monthParam = first(sp.month)
+  const month = monthParam && MONTH_RE.test(monthParam) ? monthParam : undefined
+
   const filters: TransactionFilters = {
     search: first(sp.q),
     category: first(sp.category),
     status: first(sp.status),
     type: first(sp.type),
+    bucket: first(sp.bucket),
+    month,
   }
   const page = Number(first(sp.page)) || 1
   const pageSize = clampPageSize(Number(first(sp.size)) || 25)

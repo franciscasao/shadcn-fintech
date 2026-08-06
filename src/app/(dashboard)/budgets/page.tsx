@@ -1,4 +1,4 @@
-import { getBudgetCategories, getSavingsGoals } from "@/server/queries/budgets"
+import { currentBudgetMonth, getBudgetCategories, getSavingsGoals } from "@/server/queries/budgets"
 import { getDailySpending } from "@/server/queries/analytics"
 import { BudgetRings } from "@/components/budgets/budget-rings"
 import { SavingsGoals } from "@/components/budgets/savings-goals"
@@ -17,7 +17,7 @@ export default async function Page() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-      <BudgetRings budgetCategories={budgetCategories} />
+      <BudgetRings budgetCategories={budgetCategories} month={currentBudgetMonth()} />
       <SavingsGoals savingsGoals={savingsGoals} />
       <div className="grid gap-4 lg:grid-cols-2">
         <SpendingCalendar dailySpending={dailySpending} />

@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { format, parseISO } from "date-fns"
+import { XIcon } from "lucide-react"
 
 import type {
   TransactionFilters,
@@ -11,6 +13,7 @@ import type {
 } from "@/server/queries/transactions"
 import type { NewTransactionInput } from "@/server/mutations/transactions"
 import type { BankAccount, CardData } from "@/lib/types"
+import { Badge } from "@/components/ui/badge"
 import { TransactionSummary } from "@/components/transactions/transaction-summary"
 import { TransactionFilters as TransactionFiltersBar } from "@/components/transactions/transaction-filters"
 import { TransactionTable } from "@/components/transactions/transaction-table"
@@ -145,6 +148,25 @@ export function TransactionsPageClient({
       )}
     >
       <TransactionSummary stats={transactionsPage.stats} />
+
+      {filters.bucket && (
+        <Badge variant="secondary" className="w-fit gap-1.5 py-1 pl-2.5 pr-1.5 text-xs font-normal">
+          {filters.bucket}
+          {filters.month && (
+            <span className="text-muted-foreground">
+              · {format(parseISO(`${filters.month}-01`), "MMMM yyyy")}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={() => setParams({ bucket: undefined, month: undefined, type: undefined })}
+            className="rounded-full p-0.5 hover:bg-foreground/10"
+            aria-label="Clear budget filter"
+          >
+            <XIcon className="size-3" />
+          </button>
+        </Badge>
+      )}
 
       <TransactionFiltersBar
         search={filters.search ?? ""}
