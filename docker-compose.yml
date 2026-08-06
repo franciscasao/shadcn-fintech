@@ -1,0 +1,18 @@
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: file:./data/app.db
+    volumes:
+      # Named volume, not a bind mount: Docker seeds it from the image's
+      # /app/data (the demo DB baked in at build time) on first creation,
+      # then persists whatever changes you make in the UI across restarts.
+      # `docker compose down -v` wipes it, so the next `up` starts from the
+      # freshly-seeded demo data again.
+      - sqlite-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  sqlite-data:
