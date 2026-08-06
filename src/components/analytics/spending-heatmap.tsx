@@ -21,13 +21,14 @@ const CELL_SIZE = 13
 const CELL_GAP = 3
 const TOTAL = CELL_SIZE + CELL_GAP
 
-function intensityClass(amount: number, max: number): string {
-  if (amount === 0) return "fill-muted/40"
+function intensityFill(amount: number, max: number): string | undefined {
+  if (amount === 0) return undefined // falls back to the fill-muted/40 class below
   const ratio = amount / max
-  if (ratio < 0.2) return "fill-primary/10"
-  if (ratio < 0.4) return "fill-primary/25"
-  if (ratio < 0.65) return "fill-primary/45"
-  return "fill-primary/70"
+  if (ratio < 0.2) return "var(--color-chart-seq-1)"
+  if (ratio < 0.4) return "var(--color-chart-seq-2)"
+  if (ratio < 0.65) return "var(--color-chart-seq-3)"
+  if (ratio < 0.9) return "var(--color-chart-seq-4)"
+  return "var(--color-chart-seq-5)"
 }
 
 export function SpendingHeatmap({
@@ -93,10 +94,11 @@ export function SpendingHeatmap({
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span>Less</span>
             <span className="inline-block size-3 rounded-sm bg-muted/40" />
-            <span className="inline-block size-3 rounded-sm bg-primary/10" />
-            <span className="inline-block size-3 rounded-sm bg-primary/25" />
-            <span className="inline-block size-3 rounded-sm bg-primary/45" />
-            <span className="inline-block size-3 rounded-sm bg-primary/70" />
+            <span className="inline-block size-3 rounded-sm bg-[var(--color-chart-seq-1)]" />
+            <span className="inline-block size-3 rounded-sm bg-[var(--color-chart-seq-2)]" />
+            <span className="inline-block size-3 rounded-sm bg-[var(--color-chart-seq-3)]" />
+            <span className="inline-block size-3 rounded-sm bg-[var(--color-chart-seq-4)]" />
+            <span className="inline-block size-3 rounded-sm bg-[var(--color-chart-seq-5)]" />
             <span>More</span>
           </div>
         </div>
@@ -147,7 +149,8 @@ export function SpendingHeatmap({
                         width={CELL_SIZE}
                         height={CELL_SIZE}
                         rx={2}
-                        className={`${intensityClass(cell.amount, max)} transition-colors hover:stroke-foreground/30 hover:stroke-1`}
+                        className={`${cell.amount === 0 ? "fill-muted/40" : ""} transition-colors hover:stroke-foreground/30 hover:stroke-1`}
+                        style={{ fill: intensityFill(cell.amount, max) }}
                       />
                     }
                   />

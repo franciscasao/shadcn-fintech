@@ -17,15 +17,8 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
+import { assignCategoryColors } from "@/lib/chart-palette"
 import type { CategoryBreakdown } from "@/lib/types"
-
-const SUBCATEGORY_COLORS = [
-  "var(--color-chart-1)",
-  "var(--color-chart-2)",
-  "var(--color-chart-3)",
-  "var(--color-chart-4)",
-  "var(--color-chart-5)",
-]
 
 export function CategoryDonut({
   categoryBreakdowns,
@@ -44,41 +37,37 @@ export function CategoryDonut({
     [categoryBreakdowns, selected]
   )
 
+  // Colors follow the category (or subcategory) name — a fixed hue per
+  // budget bucket, so re-sorting or drilling down never repaints one.
+  const coloredCategories = useMemo(
+    () => assignCategoryColors(categoryBreakdowns),
+    [categoryBreakdowns]
+  )
+
+  const coloredSubcategories = useMemo(() => {
+    if (!selectedCategory) return []
+    return assignCategoryColors(
+      selectedCategory.subcategories.map((s) => ({
+        category: s.name,
+        amount: s.amount,
+      }))
+    )
+  }, [selectedCategory])
+
+  const rows = selectedCategory ? coloredSubcategories : coloredCategories
+
   const chartConfig = useMemo<ChartConfig>(() => {
-    if (selectedCategory) {
-      const config: ChartConfig = {}
-      selectedCategory.subcategories.forEach((sub, i) => {
-        config[sub.name] = {
-          label: sub.name,
-          color: SUBCATEGORY_COLORS[i % SUBCATEGORY_COLORS.length],
-        }
-      })
-      return config
-    }
     const config: ChartConfig = {}
-    categoryBreakdowns.forEach((c) => {
-      config[c.category] = {
-        label: c.category,
-        color: c.color,
-      }
+    rows.forEach((row) => {
+      config[row.category] = { label: row.category, color: row.fill }
     })
     return config
-  }, [categoryBreakdowns, selectedCategory])
+  }, [rows])
 
-  const pieData = useMemo(() => {
-    if (selectedCategory) {
-      return selectedCategory.subcategories.map((sub, i) => ({
-        name: sub.name,
-        value: sub.amount,
-        fill: SUBCATEGORY_COLORS[i % SUBCATEGORY_COLORS.length],
-      }))
-    }
-    return categoryBreakdowns.map((c) => ({
-      name: c.category,
-      value: c.amount,
-      fill: c.color,
-    }))
-  }, [categoryBreakdowns, selectedCategory])
+  const pieData = useMemo(
+    () => rows.map((row) => ({ name: row.category, value: row.amount, fill: row.fill })),
+    [rows]
+  )
 
   const centerAmount = selectedCategory ? selectedCategory.amount : total
 
@@ -139,14 +128,27 @@ export function CategoryDonut({
                   stroke="var(--color-card)"
                   paddingAngle={2}
                   onClick={(_, index) => {
-                    if (!selectedCategory) {
-                      setSelected(categoryBreakdowns[index].category)
-                    }
+                    if (selectedCategory) return
+                    const clicked = pieData[index]
+                    // The synthetic "Other" slice aggregates multiple
+                    // categories, so it has no single subcategory set to
+                    // drill into — clicking it is a no-op.
+                    const match =
+                      clicked &&
+                      categoryBreakdowns.find((c) => c.category === clicked.name)
+                    if (match) setSelected(match.category)
                   }}
-                  className={selectedCategory ? "" : "cursor-pointer"}
                 >
                   {pieData.map((entry) => (
-                    <Cell key={entry.name} fill={entry.fill} />
+                    <Cell
+                      key={entry.name}
+                      fill={entry.fill}
+                      className={
+                        !selectedCategory && entry.name !== "Other"
+                          ? "cursor-pointer"
+                          : ""
+                      }
+                    />
                   ))}
                 </Pie>
                 {/* Center label */}

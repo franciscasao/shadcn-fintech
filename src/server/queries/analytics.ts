@@ -15,19 +15,6 @@ import type {
   SpendingHeatmapDay,
 } from "@/lib/types"
 
-// The 8 budget-bucket categories cycle through 5 chart colors, matching the
-// original hand-written categoryBreakdowns data.
-const BUCKET_COLOR: Record<string, string> = {
-  "Food & Dining": "var(--color-chart-1)",
-  Transport: "var(--color-chart-2)",
-  Entertainment: "var(--color-chart-3)",
-  Shopping: "var(--color-chart-4)",
-  Subscriptions: "var(--color-chart-5)",
-  Health: "var(--color-chart-1)",
-  Travel: "var(--color-chart-2)",
-  Education: "var(--color-chart-3)",
-}
-
 // A handful of the detected recurring merchants are flagged for
 // review/unset rather than "wanted", matching the flavor of the original
 // hand-written recurringCharges data.
@@ -85,7 +72,6 @@ export async function getCategoryBreakdown(): Promise<CategoryBreakdown[]> {
     return {
       category,
       amount: Math.round(entry.amount * 100) / 100,
-      color: BUCKET_COLOR[category] ?? "var(--color-chart-1)",
       subcategories: Array.from(entry.subs.entries())
         .map(([name, amount]) => ({ name, amount: Math.round(amount * 100) / 100 }))
         .sort((a, b) => b.amount - a.amount),

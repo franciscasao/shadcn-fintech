@@ -88,7 +88,6 @@ export type SpendingHeatmapDay = { date: string; amount: number }
 export type CategoryBreakdown = {
   category: string
   amount: number
-  color: string
   subcategories: { name: string; amount: number }[]
 }
 

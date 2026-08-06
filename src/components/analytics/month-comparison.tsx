@@ -20,11 +20,11 @@ import type { MonthComparison as MonthComparisonRow } from "@/lib/types"
 const chartConfig = {
   thisMonth: {
     label: "This Month",
-    color: "var(--color-primary)",
+    color: "var(--color-chart-focus)",
   },
   lastMonth: {
     label: "Last Month",
-    color: "var(--color-muted-foreground)",
+    color: "var(--color-chart-compare)",
   },
 } satisfies ChartConfig
 
@@ -75,14 +75,14 @@ export function MonthComparison({
             <CardDescription>
               <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                 <span className="flex items-center gap-1.5">
-                  <span className="size-2 rounded-full bg-primary" />
+                  <span className="size-2 rounded-full bg-[var(--color-chart-focus)]" />
                   This Month{" "}
                   <span className="font-medium tabular-nums text-foreground">
                     ₱{totals.thisMonth.toLocaleString()}
                   </span>
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="size-2 rounded-full bg-muted-foreground/30" />
+                  <span className="size-2 rounded-full bg-[var(--color-chart-compare)] opacity-30" />
                   Last Month{" "}
                   <span className="font-medium tabular-nums text-foreground">
                     ₱{totals.lastMonth.toLocaleString()}
@@ -136,14 +136,14 @@ export function MonthComparison({
             />
             <Bar
               dataKey="lastMonth"
-              fill="var(--color-muted-foreground)"
+              fill="var(--color-chart-compare)"
               fillOpacity={0.3}
               radius={[4, 4, 0, 0]}
               barSize={18}
             />
             <Bar
               dataKey="thisMonth"
-              fill="var(--color-primary)"
+              fill="var(--color-chart-focus)"
               radius={[4, 4, 0, 0]}
               barSize={18}
             >

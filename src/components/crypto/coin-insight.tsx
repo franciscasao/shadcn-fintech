@@ -157,7 +157,7 @@ function CandlestickTooltip({ active, payload }: { active?: boolean; payload?: A
 /* ── config ────────────────────────────────────────────────────────────── */
 
 const chartConfig = {
-  openClose: { label: "Price", color: "var(--chart-1)" },
+  openClose: { label: "Price", color: "var(--color-chart-1)" },
 } satisfies ChartConfig
 
 const PERIODS = ["1D", "1W", "1M", "3M", "1Y", "ALL"] as const
