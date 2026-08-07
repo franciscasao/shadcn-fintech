@@ -77,6 +77,14 @@ async function main() {
     .returning()
     .all()
   const cardIdByLast4 = new Map(insertedCards.map((c) => [c.last4, c.id]))
+  const cardById = new Map(insertedCards.map((c) => [c.id, c]))
+  // A transaction's account is whichever account funded the card it was
+  // paid with (see the accountId comment on `cards` in ./schema) — falling
+  // back to the primary account for card-less transactions (income) and for
+  // credit cards, which carry no funding account by design.
+  function accountIdForCard(cardId: number | null): number {
+    return (cardId != null ? cardById.get(cardId)?.accountId : null) ?? primaryAccountId
+  }
 
   console.log("Seeding transfers...")
   db.insert(schema.transfers)
@@ -118,12 +126,15 @@ async function main() {
   console.log("Seeding curated transactions...")
   db.insert(schema.transactions)
     .values(
-      curatedTransactionFixtures.map(({ cardLast4, ...t }) => ({
-        ...t,
-        accountId: primaryAccountId,
-        cardId: cardLast4 ? cardIdByLast4.get(cardLast4) ?? null : null,
-        userId: DEMO_USER_ID,
-      }))
+      curatedTransactionFixtures.map(({ cardLast4, ...t }) => {
+        const cardId = cardLast4 ? (cardIdByLast4.get(cardLast4) ?? null) : null
+        return {
+          ...t,
+          accountId: accountIdForCard(cardId),
+          cardId,
+          userId: DEMO_USER_ID,
+        }
+      })
     )
     .run()
 
@@ -132,12 +143,15 @@ async function main() {
   const cardIds = insertedCards.map((c) => c.id)
   const CHUNK = 200
   for (let i = 0; i < ledger.length; i += CHUNK) {
-    const chunk = ledger.slice(i, i + CHUNK).map((t) => ({
-      ...t,
-      accountId: primaryAccountId,
-      cardId: t.type === "expense" ? cardIds[Math.floor(Math.random() * cardIds.length)] : null,
-      userId: DEMO_USER_ID,
-    }))
+    const chunk = ledger.slice(i, i + CHUNK).map((t) => {
+      const cardId = t.type === "expense" ? cardIds[Math.floor(Math.random() * cardIds.length)] : null
+      return {
+        ...t,
+        accountId: accountIdForCard(cardId),
+        cardId,
+        userId: DEMO_USER_ID,
+      }
+    })
     db.insert(schema.transactions).values(chunk).run()
   }
 

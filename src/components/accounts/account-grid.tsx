@@ -31,6 +31,9 @@ interface AccountCardProps {
   index: number
   onSelect?: (account: BankAccount) => void
   onDelete?: (account: BankAccount) => void
+  /** Clicking the card body (not the ⋯ menu) navigates to that account's
+   * transactions — see the account filter in @/server/queries/transactions. */
+  onViewTransactions?: (account: BankAccount) => void
 }
 
 const fmt = (n: number, currency = "₱") =>
@@ -39,7 +42,13 @@ const fmt = (n: number, currency = "₱") =>
     maximumFractionDigits: 2,
   }).format(Math.abs(n))}`
 
-export function AccountCard({ account, index, onSelect, onDelete }: AccountCardProps) {
+export function AccountCard({
+  account,
+  index,
+  onSelect,
+  onDelete,
+  onViewTransactions,
+}: AccountCardProps) {
   const [imgError, setImgError] = useState(false)
 
   return (
@@ -47,8 +56,11 @@ export function AccountCard({ account, index, onSelect, onDelete }: AccountCardP
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
-      onClick={() => onSelect?.(account)}
-      className="group relative cursor-pointer overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 transition-shadow hover:shadow-md"
+      onClick={() => onViewTransactions?.(account)}
+      className={cn(
+        "group relative overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 transition-shadow hover:shadow-md",
+        onViewTransactions && "cursor-pointer"
+      )}
     >
       {/* Colored left border */}
       <div
@@ -66,7 +78,7 @@ export function AccountCard({ account, index, onSelect, onDelete }: AccountCardP
                 <Button
                   variant="ghost"
                   size="icon-xs"
-                  className="opacity-0 transition-opacity group-hover:opacity-100 aria-expanded:opacity-100"
+                  className="opacity-100 transition-opacity [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 aria-expanded:opacity-100"
                   onClick={(e) => e.stopPropagation()}
                 />
               }

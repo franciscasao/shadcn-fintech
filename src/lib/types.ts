@@ -42,6 +42,7 @@ export type FullTransaction = {
   date: string
   logo: string
   category: string
+  subcategory?: string
   status: "completed" | "pending" | "failed"
   type: "expense" | "income"
   notes?: string

@@ -10,10 +10,17 @@ export default function Loading() {
         ))}
       </div>
       {/* Filters */}
-      <div className="flex gap-3">
-        <Skeleton className="h-9 w-64 rounded-md" />
-        <Skeleton className="h-9 w-32 rounded-md" />
-        <Skeleton className="h-9 w-32 rounded-md" />
+      <div className="flex flex-wrap gap-2">
+        <Skeleton className="h-8 min-w-[180px] flex-1 rounded-lg" />
+        <Skeleton className="h-8 w-36 rounded-lg" />
+        <Skeleton className="h-8 w-32 rounded-lg" />
+        <Skeleton className="h-8 w-24 rounded-lg" />
+        <Skeleton className="h-8 w-36 rounded-lg" />
+      </div>
+      {/* Active filter chips */}
+      <div className="flex gap-1.5">
+        <Skeleton className="h-5 w-24 rounded-full" />
+        <Skeleton className="h-5 w-20 rounded-full" />
       </div>
       {/* Table rows */}
       <div className="space-y-2">

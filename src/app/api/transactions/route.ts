@@ -1,7 +1,8 @@
 import {
-  clampPageSize,
   getTransactionsPage,
-  type TransactionFilters,
+  parseTransactionFilters,
+  parseTransactionPaging,
+  parseTransactionSort,
 } from "@/server/queries/transactions"
 import {
   createTransaction,
@@ -9,19 +10,18 @@ import {
   type NewTransactionInput,
 } from "@/server/mutations/transactions"
 
+// Shares its filter/sort/paging parsing with the Transactions page (see
+// src/app/(dashboard)/transactions/page.tsx) via parseTransactionFilters —
+// URLSearchParams satisfies the ParamSource shape those parsers expect, so
+// the two call sites can't drift out of sync with each other.
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
 
-  const filters: TransactionFilters = {
-    search: searchParams.get("q") ?? undefined,
-    category: searchParams.get("category") ?? undefined,
-    status: searchParams.get("status") ?? undefined,
-    type: searchParams.get("type") ?? undefined,
-  }
-  const page = Number(searchParams.get("page")) || 1
-  const pageSize = clampPageSize(Number(searchParams.get("size")) || 25)
+  const filters = parseTransactionFilters(searchParams)
+  const sort = parseTransactionSort(searchParams)
+  const { page, pageSize } = parseTransactionPaging(searchParams)
 
-  const transactionsPage = await getTransactionsPage(filters, { page, pageSize })
+  const transactionsPage = await getTransactionsPage(filters, { page, pageSize, sort })
   return Response.json(transactionsPage)
 }
 

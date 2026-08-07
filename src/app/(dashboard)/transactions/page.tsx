@@ -1,9 +1,9 @@
 import {
-  clampPageSize,
+  fromSearchParamsObject,
   getTransactionsPage,
-  type TransactionFilters,
-  type TransactionSort,
-  type TransactionSortKey,
+  parseTransactionFilters,
+  parseTransactionPaging,
+  parseTransactionSort,
 } from "@/server/queries/transactions"
 import { getCategories } from "@/server/queries/categories"
 import { getAccounts } from "@/server/queries/accounts"
@@ -15,50 +15,15 @@ import { TransactionsPageClient } from "@/components/transactions/transactions-p
 // Reads live data from SQLite on every request — see (dashboard)/layout.tsx.
 export const dynamic = "force-dynamic"
 
-function first(value: string | string[] | undefined): string | undefined {
-  return Array.isArray(value) ? value[0] : value
-}
-
-const SORT_KEYS: TransactionSortKey[] = ["merchant", "amount", "date", "status"]
-const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/
-
-/** Validates the `sort`/`dir` searchParams against the allowed columns —
- * these values reach a SQL `orderBy`, so anything outside this list is
- * rejected rather than passed through. Returns undefined when absent —
- * getTransactionsPage's own no-sort default already orders newest-first,
- * and the client keeps this distinct from an explicit date-desc sort so
- * clicking Date while on the default has an asc/desc cycle to move through
- * instead of "turning off" a sort that was never turned on. */
-function parseSort(sp: { [key: string]: string | string[] | undefined }): TransactionSort | undefined {
-  const key = first(sp.sort)
-  const dir = first(sp.dir)
-  if (!key || !SORT_KEYS.includes(key as TransactionSortKey)) return undefined
-  return { key: key as TransactionSortKey, dir: dir === "asc" ? "asc" : "desc" }
-}
-
 export default async function Page({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  const sp = await searchParams
-
-  // Validated before reaching SQL, same posture as parseSort below — an
-  // out-of-shape month would otherwise land in a raw string comparison.
-  const monthParam = first(sp.month)
-  const month = monthParam && MONTH_RE.test(monthParam) ? monthParam : undefined
-
-  const filters: TransactionFilters = {
-    search: first(sp.q),
-    category: first(sp.category),
-    status: first(sp.status),
-    type: first(sp.type),
-    bucket: first(sp.bucket),
-    month,
-  }
-  const page = Number(first(sp.page)) || 1
-  const pageSize = clampPageSize(Number(first(sp.size)) || 25)
-  const sort = parseSort(sp)
+  const src = fromSearchParamsObject(await searchParams)
+  const filters = parseTransactionFilters(src)
+  const sort = parseTransactionSort(src)
+  const { page, pageSize } = parseTransactionPaging(src)
 
   const [transactionsPage, categories, accounts, cards] = await Promise.all([
     getTransactionsPage(filters, { page, pageSize, sort }),
@@ -75,7 +40,8 @@ export default async function Page({
     <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
       <TransactionsPageClient
         transactionsPage={transactionsPage}
-        categories={categoryNames}
+        categories={categories}
+        categoryNames={categoryNames}
         categoryMeta={categoryMeta}
         accounts={accounts}
         cards={cards}

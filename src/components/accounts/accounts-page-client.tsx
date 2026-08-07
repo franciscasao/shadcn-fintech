@@ -145,6 +145,7 @@ export function AccountsPageClient({
               index={i}
               onSelect={setEditingAccount}
               onDelete={setDeletingAccount}
+              onViewTransactions={(a) => router.push(`/transactions?account=${a.id}`)}
             />
           ))}
           <AddAccount onAdd={handleAddAccount} />

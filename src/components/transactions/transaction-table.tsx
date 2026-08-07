@@ -9,11 +9,12 @@ import {
   InfoIcon,
   MoreHorizontalIcon,
   StickyNoteIcon,
+  TagIcon,
   TrashIcon,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import type { FullTransaction } from "@/data/seed"
+import type { FullTransaction } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -55,6 +56,11 @@ interface TransactionTableProps {
   sortDir: SortDir
   onSort: (key: TransactionSortKey) => void
   onDelete: (tx: FullTransaction) => void
+  /** Whether any filter is currently active — swaps the empty state between
+   * "no transactions at all" and "nothing matches these filters", and wires
+   * up its Clear filters action (see EmptyState's actionLabel/onAction). */
+  hasActiveFilters: boolean
+  onClearFilters: () => void
 }
 
 const fmt = (n: number) =>
@@ -91,6 +97,8 @@ export function TransactionTable({
   sortDir,
   onSort,
   onDelete,
+  hasActiveFilters,
+  onClearFilters,
 }: TransactionTableProps) {
   const allSelected =
     filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id))
@@ -168,7 +176,12 @@ export function TransactionTable({
           {transactions.length === 0 && (
             <TableRow>
               <TableCell colSpan={7}>
-                <EmptyState variant="filter" className="py-12" />
+                <EmptyState
+                  variant={hasActiveFilters ? "filter" : "transactions"}
+                  actionLabel={hasActiveFilters ? "Clear filters" : undefined}
+                  onAction={hasActiveFilters ? onClearFilters : undefined}
+                  className="py-12"
+                />
               </TableCell>
             </TableRow>
           )}
@@ -246,6 +259,9 @@ function TransactionRow({
                   </span>
                 )}
                 {tx.category}
+                {tx.subcategory && (
+                  <span className="text-muted-foreground/70">· {tx.subcategory}</span>
+                )}
               </Badge>
             </div>
           </div>
@@ -331,6 +347,13 @@ function TransactionRow({
                       <span className="tabular-nums">
                         Paid with card ending ****{tx.cardLast4}
                       </span>
+                    </div>
+                  )}
+
+                  {tx.subcategory && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <TagIcon className="size-3.5 shrink-0" />
+                      <span>{tx.subcategory}</span>
                     </div>
                   )}
 
