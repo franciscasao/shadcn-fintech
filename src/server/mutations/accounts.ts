@@ -1,7 +1,7 @@
-import { eq } from "drizzle-orm"
+import { eq, inArray, or } from "drizzle-orm"
 
 import { DEMO_USER_ID, getDb } from "@/server/db"
-import { accounts } from "@/server/db/schema"
+import { accounts, cards, transactions, transfers } from "@/server/db/schema"
 import { toBankAccount } from "@/server/queries/accounts"
 import { getInstitution, type NewAccountInput } from "@/lib/ph-institutions"
 import type { BankAccount } from "@/lib/types"
@@ -92,4 +92,77 @@ export async function setAccountBalance(accountId: number, balance: number): Pro
     .returning()
     .all()
   return toBankAccount(row)
+}
+
+export type DeleteAccountResult = "not_found" | "last_account" | void
+
+/** Deletes an account together with its history: its own ledger rows, any
+ * transfer it was either side of, and unlinks (rather than deletes) any card
+ * funded by it so the card survives with no funding account — mirrors the
+ * degrade-gracefully handling already in getCards() for a null accountId.
+ * Refuses to delete the user's only account: getPrimaryAccountId() throws
+ * once the accounts table is empty, which would break external transfers
+ * app-wide. */
+export async function deleteAccount(id: number): Promise<DeleteAccountResult> {
+  const db = getDb()
+
+  return db.transaction((tx) => {
+    const account = tx
+      .select()
+      .from(accounts)
+      .where(eq(accounts.id, id))
+      .get()
+    if (!account || account.userId !== DEMO_USER_ID) return "not_found"
+
+    const userAccounts = tx
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(eq(accounts.userId, DEMO_USER_ID))
+      .all()
+    if (userAccounts.length <= 1) return "last_account"
+
+    // Transfers this account was either side of. For an internal transfer,
+    // the *other* account's ledger leg and balance need to be reversed
+    // before that leg is deleted — otherwise the surviving account keeps a
+    // balance that reflects a ledger row which just vanished.
+    const linkedTransfers = tx
+      .select()
+      .from(transfers)
+      .where(or(eq(transfers.accountId, id), eq(transfers.toAccountId, id)))
+      .all()
+    const transferIds = linkedTransfers.map((t) => t.id)
+
+    if (transferIds.length > 0) {
+      const legs = tx
+        .select()
+        .from(transactions)
+        .where(inArray(transactions.transferId, transferIds))
+        .all()
+
+      const deltaByAccount = new Map<number, number>()
+      for (const leg of legs) {
+        if (leg.accountId == null || leg.accountId === id) continue
+        deltaByAccount.set(leg.accountId, (deltaByAccount.get(leg.accountId) ?? 0) - leg.amount)
+      }
+      for (const [accountId, delta] of deltaByAccount) {
+        const other = tx.select().from(accounts).where(eq(accounts.id, accountId)).get()
+        if (!other) continue
+        tx.update(accounts)
+          .set({ balance: Math.round((other.balance + delta) * 100) / 100 })
+          .where(eq(accounts.id, accountId))
+          .run()
+      }
+
+      tx.delete(transactions).where(inArray(transactions.transferId, transferIds)).run()
+      tx.delete(transfers).where(inArray(transfers.id, transferIds)).run()
+    }
+
+    // The account's own (non-transfer) ledger rows — no balance reversal
+    // needed since the account itself is being removed.
+    tx.delete(transactions).where(eq(transactions.accountId, id)).run()
+
+    tx.update(cards).set({ accountId: null }).where(eq(cards.accountId, id)).run()
+
+    tx.delete(accounts).where(eq(accounts.id, id)).run()
+  })
 }

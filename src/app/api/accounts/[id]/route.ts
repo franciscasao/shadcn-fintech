@@ -1,5 +1,5 @@
 import { getAccountById } from "@/server/queries/accounts"
-import { setAccountBalance } from "@/server/mutations/accounts"
+import { deleteAccount, setAccountBalance } from "@/server/mutations/accounts"
 
 function badRequest(error: string) {
   return Response.json({ error }, { status: 400 })
@@ -21,4 +21,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const account = await setAccountBalance(accountId, balance)
   return Response.json(account)
+}
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const accountId = Number(id)
+  if (!Number.isInteger(accountId)) return badRequest("invalid account id")
+
+  const result = await deleteAccount(accountId)
+  if (result === "not_found") {
+    return Response.json({ error: "account not found" }, { status: 404 })
+  }
+  if (result === "last_account") {
+    return badRequest("Can't delete your only account")
+  }
+  return new Response(null, { status: 204 })
 }

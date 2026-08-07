@@ -1,19 +1,21 @@
 "use client"
 
 import { AnimatePresence, motion } from "motion/react"
-import { DownloadIcon, XIcon } from "lucide-react"
+import { DownloadIcon, Trash2Icon, XIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 
 interface TransactionActionsProps {
   selectedCount: number
   onExport: () => void
+  onDelete: () => void
   onClear: () => void
 }
 
 export function TransactionActions({
   selectedCount,
   onExport,
+  onDelete,
   onClear,
 }: TransactionActionsProps) {
   return (
@@ -36,6 +38,11 @@ export function TransactionActions({
             <Button variant="outline" size="sm" onClick={onExport}>
               <DownloadIcon className="size-3.5" />
               Export CSV
+            </Button>
+
+            <Button variant="destructive" size="sm" onClick={onDelete}>
+              <Trash2Icon className="size-3.5" />
+              Delete
             </Button>
 
             <Button variant="ghost" size="sm" onClick={onClear}>

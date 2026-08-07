@@ -11,9 +11,11 @@ import { AccountSummary } from "@/components/accounts/account-summary"
 import { AccountCard } from "@/components/accounts/account-grid"
 import { AddAccount, type NewAccountInput } from "@/components/accounts/add-account"
 import { EditBalanceDialog } from "@/components/accounts/edit-balance-dialog"
+import { DeleteAccountDialog } from "@/components/accounts/delete-account-dialog"
 import { EmptyState } from "@/components/empty-state"
 import { TransferBetweenAccountsDialog } from "@/components/transfers/transfer-between-accounts-dialog"
 import type { NewInternalTransferInput } from "@/server/mutations/transfers"
+import type { AccountImpact } from "@/server/queries/accounts"
 
 const filterTabs = [
   { value: "all", label: "All" },
@@ -27,14 +29,17 @@ type AccountType = (typeof filterTabs)[number]["value"]
 
 export function AccountsPageClient({
   initialAccounts,
+  impacts,
   defaultDate,
 }: {
   initialAccounts: BankAccount[]
+  impacts: Record<string, AccountImpact>
   defaultDate: string
 }) {
   const router = useRouter()
   const [selectedType, setSelectedType] = useState<AccountType>("all")
   const [editingAccount, setEditingAccount] = useState<BankAccount | null>(null)
+  const [deletingAccount, setDeletingAccount] = useState<BankAccount | null>(null)
   const [transferOpen, setTransferOpen] = useState(false)
   const accounts = initialAccounts
 
@@ -63,6 +68,15 @@ export function AccountsPageClient({
       body: JSON.stringify({ balance }),
     })
     if (!res.ok) throw new Error("Failed to update balance")
+    router.refresh()
+  }
+
+  async function handleDeleteAccount(accountId: string) {
+    const res = await fetch(`/api/accounts/${accountId}`, { method: "DELETE" })
+    if (!res.ok) {
+      const body = await res.json().catch(() => null)
+      throw new Error(body?.error ?? "Couldn't delete account")
+    }
     router.refresh()
   }
 
@@ -130,6 +144,7 @@ export function AccountsPageClient({
               account={account}
               index={i}
               onSelect={setEditingAccount}
+              onDelete={setDeletingAccount}
             />
           ))}
           <AddAccount onAdd={handleAddAccount} />
@@ -140,6 +155,14 @@ export function AccountsPageClient({
         account={editingAccount}
         onOpenChange={(open) => !open && setEditingAccount(null)}
         onSave={handleSaveBalance}
+      />
+
+      <DeleteAccountDialog
+        account={deletingAccount}
+        isOnlyAccount={accounts.length <= 1}
+        impact={deletingAccount ? impacts[deletingAccount.id] : undefined}
+        onOpenChange={(open) => !open && setDeletingAccount(null)}
+        onDelete={handleDeleteAccount}
       />
 
       <TransferBetweenAccountsDialog

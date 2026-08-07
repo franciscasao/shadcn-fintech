@@ -9,17 +9,28 @@ import {
   BuildingIcon,
   ShieldCheckIcon,
   ShieldOffIcon,
+  MoreHorizontalIcon,
+  PencilIcon,
+  TrashIcon,
 } from "lucide-react"
 import { motion } from "motion/react"
 
 import { cn } from "@/lib/utils"
 import { creditingLabel, formatRate } from "@/lib/interest"
 import type { BankAccount } from "@/lib/types"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface AccountCardProps {
   account: BankAccount
   index: number
   onSelect?: (account: BankAccount) => void
+  onDelete?: (account: BankAccount) => void
 }
 
 const fmt = (n: number, currency = "₱") =>
@@ -28,7 +39,7 @@ const fmt = (n: number, currency = "₱") =>
     maximumFractionDigits: 2,
   }).format(Math.abs(n))}`
 
-export function AccountCard({ account, index, onSelect }: AccountCardProps) {
+export function AccountCard({ account, index, onSelect, onDelete }: AccountCardProps) {
   const [imgError, setImgError] = useState(false)
 
   return (
@@ -46,6 +57,35 @@ export function AccountCard({ account, index, onSelect }: AccountCardProps) {
           account.color
         )}
       />
+
+      {onDelete && (
+        <div className="absolute right-2 top-2 z-10">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="opacity-0 transition-opacity group-hover:opacity-100 aria-expanded:opacity-100"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              }
+            >
+              <MoreHorizontalIcon className="size-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="bottom" align="end">
+              <DropdownMenuItem onClick={() => onSelect?.(account)}>
+                <PencilIcon className="size-3.5" />
+                Edit balance
+              </DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onClick={() => onDelete(account)}>
+                <TrashIcon className="size-3.5" />
+                Delete account
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
 
       <div className="p-4 pl-5">
         {/* Institution row */}

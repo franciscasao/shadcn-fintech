@@ -48,6 +48,12 @@ export type FullTransaction = {
   merchantInfo?: string
   cardLast4?: string
   transferId?: number
+  // Auto-generated leg of an internal (account-to-account) transfer — see
+  // createInternalTransfer in @/server/mutations/transfers. These come in
+  // linked pairs, so the delete UI refuses to remove just one leg. Always
+  // populated by the query layer; optional only because the seed fixtures
+  // in @/server/db/fixtures build this shape without it.
+  isTransfer?: boolean
 }
 
 // ── Cards page ───────────────────────────────────────────────────────────────

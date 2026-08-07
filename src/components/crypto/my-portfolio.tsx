@@ -167,7 +167,7 @@ export function MyPortfolio({ prices, originalPrices, selectedCoin, onSelectCoin
                   <DropdownMenuContent side="bottom" align="end">
                     <DropdownMenuItem>Buy More</DropdownMenuItem>
                     <DropdownMenuItem>Sell</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => onSelectCoin(seg.coin.id)}>View Chart</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onSelectCoin(seg.coin.id)}>View Chart</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

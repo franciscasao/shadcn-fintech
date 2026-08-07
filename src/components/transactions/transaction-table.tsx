@@ -9,12 +9,19 @@ import {
   InfoIcon,
   MoreHorizontalIcon,
   StickyNoteIcon,
+  TrashIcon,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import type { FullTransaction } from "@/data/seed"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { budgetIconMap } from "@/components/budgets/budget-icons"
 import { SortIcon } from "@/components/sort-icon"
 import type { SortDir } from "@/hooks/use-table-sort"
@@ -47,6 +54,7 @@ interface TransactionTableProps {
   sortKey: TransactionSortKey | null
   sortDir: SortDir
   onSort: (key: TransactionSortKey) => void
+  onDelete: (tx: FullTransaction) => void
 }
 
 const fmt = (n: number) =>
@@ -82,6 +90,7 @@ export function TransactionTable({
   sortKey,
   sortDir,
   onSort,
+  onDelete,
 }: TransactionTableProps) {
   const allSelected =
     filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id))
@@ -177,6 +186,7 @@ export function TransactionTable({
                   setExpandedId(isExpanded ? null : tx.id)
                 }
                 categoryMeta={categoryMeta}
+                onDelete={() => onDelete(tx)}
               />
             )
           })}
@@ -194,6 +204,7 @@ function TransactionRow({
   onToggleSelect,
   onToggleExpand,
   categoryMeta,
+  onDelete,
 }: {
   tx: FullTransaction
   isSelected: boolean
@@ -201,6 +212,7 @@ function TransactionRow({
   onToggleSelect: () => void
   onToggleExpand: () => void
   categoryMeta: Record<string, { iconName: string; color: string }>
+  onDelete: () => void
 }) {
   return (
     <>
@@ -266,16 +278,30 @@ function TransactionRow({
         </TableCell>
 
         <TableCell>
-          <Button
-            variant="ghost"
-            size="icon-xs"
-            className="opacity-0 transition-opacity group-hover:opacity-100"
-            onClick={(e) => {
-              e.stopPropagation()
-            }}
-          >
-            <MoreHorizontalIcon className="size-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="opacity-0 transition-opacity group-hover:opacity-100 aria-expanded:opacity-100"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              }
+            >
+              <MoreHorizontalIcon className="size-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="bottom" align="end">
+              <DropdownMenuItem
+                variant="destructive"
+                disabled={tx.isTransfer}
+                onClick={onDelete}
+              >
+                <TrashIcon className="size-3.5" />
+                {tx.isTransfer ? "Part of a transfer" : "Delete"}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </TableCell>
       </TableRow>
 

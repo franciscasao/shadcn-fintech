@@ -3,7 +3,11 @@ import {
   getTransactionsPage,
   type TransactionFilters,
 } from "@/server/queries/transactions"
-import { createTransaction, type NewTransactionInput } from "@/server/mutations/transactions"
+import {
+  createTransaction,
+  deleteTransactions,
+  type NewTransactionInput,
+} from "@/server/mutations/transactions"
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -94,4 +98,25 @@ export async function POST(request: Request) {
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 404 })
   }
+}
+
+const MAX_DELETE_IDS = 5000
+
+export async function DELETE(request: Request) {
+  const body = await request.json().catch(() => null)
+  const ids = body?.ids
+
+  if (!Array.isArray(ids) || ids.some((id) => typeof id !== "string")) {
+    return badRequest("ids must be an array of strings")
+  }
+  if (ids.length === 0) {
+    return badRequest("ids must not be empty")
+  }
+  if (ids.length > MAX_DELETE_IDS) {
+    return badRequest(`ids must not exceed ${MAX_DELETE_IDS} entries`)
+  }
+
+  const numericIds = ids.map((id) => Number(id)).filter((id) => Number.isInteger(id))
+  const result = await deleteTransactions(numericIds)
+  return Response.json(result)
 }

@@ -245,7 +245,7 @@ export function MarketOverview({ prices, originalPrices, selectedCoin, onSelectC
                       <DropdownMenuContent side="bottom" align="end">
                         <DropdownMenuItem>Buy</DropdownMenuItem>
                         <DropdownMenuItem>Sell</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => onSelectCoin(coin.id)}>
+                        <DropdownMenuItem onClick={() => onSelectCoin(coin.id)}>
                           View Chart
                         </DropdownMenuItem>
                       </DropdownMenuContent>

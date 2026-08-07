@@ -1,7 +1,7 @@
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 
 import { DEMO_USER_ID, getDb } from "@/server/db"
-import { accounts } from "@/server/db/schema"
+import { accounts, cards, transactions, transfers } from "@/server/db/schema"
 import type { BankAccount } from "@/lib/types"
 
 /** Shared row -> API-shape mapper, also used by @/server/mutations/accounts. */
@@ -63,4 +63,66 @@ export async function getPrimaryAccountId(): Promise<number> {
   const primary = rows.find((a) => a.name === "Primary Checking") ?? rows[0]
   if (!primary) throw new Error("No accounts seeded for demo user")
   return primary.id
+}
+
+export type AccountImpact = { transactions: number; transfers: number; cards: number }
+
+/** Counts of what deleting each account would take with it — powers the
+ * delete-account confirmation dialog (see deleteAccount() in
+ * @/server/mutations/accounts). Grouped counts merged into one map so the
+ * accounts page can fetch this once instead of per-account. */
+export async function getAccountImpacts(): Promise<Record<string, AccountImpact>> {
+  const db = getDb()
+
+  const txCounts = db
+    .select({ accountId: transactions.accountId, count: sql<number>`count(*)` })
+    .from(transactions)
+    .where(eq(transactions.userId, DEMO_USER_ID))
+    .groupBy(transactions.accountId)
+    .all()
+
+  const transferCounts = db
+    .select({ accountId: transfers.accountId, count: sql<number>`count(*)` })
+    .from(transfers)
+    .where(eq(transfers.userId, DEMO_USER_ID))
+    .groupBy(transfers.accountId)
+    .all()
+  const toAccountTransferCounts = db
+    .select({ accountId: transfers.toAccountId, count: sql<number>`count(*)` })
+    .from(transfers)
+    .where(eq(transfers.userId, DEMO_USER_ID))
+    .groupBy(transfers.toAccountId)
+    .all()
+
+  const cardCounts = db
+    .select({ accountId: cards.accountId, count: sql<number>`count(*)` })
+    .from(cards)
+    .where(eq(cards.userId, DEMO_USER_ID))
+    .groupBy(cards.accountId)
+    .all()
+
+  const impacts: Record<string, AccountImpact> = {}
+  function ensure(id: number) {
+    const key = String(id)
+    return (impacts[key] ??= { transactions: 0, transfers: 0, cards: 0 })
+  }
+
+  for (const row of txCounts) {
+    if (row.accountId == null) continue
+    ensure(row.accountId).transactions += row.count
+  }
+  for (const row of transferCounts) {
+    if (row.accountId == null) continue
+    ensure(row.accountId).transfers += row.count
+  }
+  for (const row of toAccountTransferCounts) {
+    if (row.accountId == null) continue
+    ensure(row.accountId).transfers += row.count
+  }
+  for (const row of cardCounts) {
+    if (row.accountId == null) continue
+    ensure(row.accountId).cards += row.count
+  }
+
+  return impacts
 }

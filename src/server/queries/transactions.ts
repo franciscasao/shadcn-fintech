@@ -86,6 +86,8 @@ function toFullTransaction(row: {
     notes: t.notes ?? undefined,
     merchantInfo: t.merchantInfo ?? undefined,
     cardLast4: row.cards?.last4,
+    transferId: t.transferId ?? undefined,
+    isTransfer: t.transferId != null,
   }
 }
 

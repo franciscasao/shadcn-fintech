@@ -11,8 +11,11 @@ import type {
   TransactionSort,
   TransactionSortKey,
 } from "@/server/queries/transactions"
-import type { NewTransactionInput } from "@/server/mutations/transactions"
-import type { BankAccount, CardData } from "@/lib/types"
+import type {
+  DeleteTransactionsResult,
+  NewTransactionInput,
+} from "@/server/mutations/transactions"
+import type { BankAccount, CardData, FullTransaction } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
 import { TransactionSummary } from "@/components/transactions/transaction-summary"
 import { TransactionFilters as TransactionFiltersBar } from "@/components/transactions/transaction-filters"
@@ -20,6 +23,7 @@ import { TransactionTable } from "@/components/transactions/transaction-table"
 import { TransactionPagination } from "@/components/transactions/transaction-pagination"
 import { TransactionActions } from "@/components/transactions/transaction-actions"
 import { AddTransactionDialog } from "@/components/transactions/add-transaction-dialog"
+import { DeleteTransactionsDialog } from "@/components/transactions/delete-transactions-dialog"
 import { cn } from "@/lib/utils"
 
 export function TransactionsPageClient({
@@ -49,6 +53,7 @@ export function TransactionsPageClient({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
+  const [deleteTargetIds, setDeleteTargetIds] = useState<string[] | null>(null)
 
   // An expanded row can scroll off the page when the page number changes —
   // reset it during render (React's "adjusting state on prop change"
@@ -140,6 +145,32 @@ export function TransactionsPageClient({
     router.refresh()
   }
 
+  async function handleDeleteTransactions(ids: string[]): Promise<DeleteTransactionsResult> {
+    const res = await fetch("/api/transactions", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => null)
+      throw new Error(body?.error ?? "Couldn't delete transactions")
+    }
+    const result: DeleteTransactionsResult = await res.json()
+    // Drop the deleted ids from the selection so the bulk bar doesn't keep
+    // showing a stale count for rows that no longer exist.
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      for (const id of ids) next.delete(id)
+      return next
+    })
+    router.refresh()
+    return result
+  }
+
+  function handleDeleteTransaction(tx: FullTransaction) {
+    setDeleteTargetIds([tx.id])
+  }
+
   return (
     <div
       className={cn(
@@ -193,6 +224,7 @@ export function TransactionsPageClient({
           sortKey={sort?.key ?? "date"}
           sortDir={sort?.dir ?? "desc"}
           onSort={handleSort}
+          onDelete={handleDeleteTransaction}
         />
 
         <TransactionPagination
@@ -208,6 +240,7 @@ export function TransactionsPageClient({
       <TransactionActions
         selectedCount={selectedIds.size}
         onExport={handleExport}
+        onDelete={() => setDeleteTargetIds(Array.from(selectedIds))}
         onClear={() => setSelectedIds(new Set())}
       />
 
@@ -219,6 +252,12 @@ export function TransactionsPageClient({
         cards={cards}
         defaultDate={defaultDate}
         onAdd={handleAddTransaction}
+      />
+
+      <DeleteTransactionsDialog
+        ids={deleteTargetIds}
+        onOpenChange={(open) => !open && setDeleteTargetIds(null)}
+        onDelete={handleDeleteTransactions}
       />
     </div>
   )

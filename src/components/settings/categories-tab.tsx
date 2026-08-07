@@ -174,13 +174,13 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
                           <MoreHorizontalIcon className="size-4" />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent side="bottom" align="end">
-                          <DropdownMenuItem onSelect={() => setDialogTarget(c)}>
+                          <DropdownMenuItem onClick={() => setDialogTarget(c)}>
                             <PencilIcon className="size-3.5" />
                             Edit
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             variant="destructive"
-                            onSelect={() => setDeleteTarget(c)}
+                            onClick={() => setDeleteTarget(c)}
                           >
                             <TrashIcon className="size-3.5" />
                             Delete
