@@ -23,6 +23,14 @@ function isValidOptionalNumber(value: unknown, { max }: { max?: number } = {}) {
   return typeof value === "number" && Number.isFinite(value) && value >= 0 && (max === undefined || value <= max)
 }
 
+// Optional 1-31 "day of month" field (statementDay / dueDay) — clamped to a
+// real calendar day; see clampToMonth in @/lib/credit for how a value like
+// 31 resolves in a shorter month.
+function isValidOptionalDayOfMonth(value: unknown) {
+  if (value === undefined || value === null) return true
+  return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 31
+}
+
 export async function POST(request: Request) {
   const body = await request.json()
   const {
@@ -37,6 +45,10 @@ export async function POST(request: Request) {
     dailyLimit,
     monthlyLimit,
     color,
+    creditLimit,
+    apr,
+    statementDay,
+    dueDay,
   } = body ?? {}
 
   if (typeof name !== "string" || !name.trim()) {
@@ -103,6 +115,18 @@ export async function POST(request: Request) {
   if (color !== undefined && color !== null && !isValidCardColor(color)) {
     return badRequest("color is not a recognized card color")
   }
+  if (!isValidOptionalNumber(creditLimit)) {
+    return badRequest("creditLimit must be a non-negative number")
+  }
+  if (!isValidOptionalNumber(apr, { max: 100 })) {
+    return badRequest("apr must be a number between 0 and 100")
+  }
+  if (!isValidOptionalDayOfMonth(statementDay)) {
+    return badRequest("statementDay must be an integer between 1 and 31")
+  }
+  if (!isValidOptionalDayOfMonth(dueDay)) {
+    return badRequest("dueDay must be an integer between 1 and 31")
+  }
 
   const input: NewCardInput = {
     accountId: resolvedAccountId,
@@ -116,6 +140,10 @@ export async function POST(request: Request) {
     dailyLimit: dailyLimit ?? undefined,
     monthlyLimit: monthlyLimit ?? undefined,
     color: color ?? undefined,
+    creditLimit: creditLimit ?? undefined,
+    apr: apr ?? undefined,
+    statementDay: statementDay ?? undefined,
+    dueDay: dueDay ?? undefined,
   }
 
   const card = await createCard(input)

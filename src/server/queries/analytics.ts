@@ -35,7 +35,13 @@ async function getAllTransactions(): Promise<TxnRow[]> {
   return db
     .select()
     .from(transactions)
-    .where(and(eq(transactions.userId, DEMO_USER_ID), isNull(transactions.transferId)))
+    .where(
+      and(
+        eq(transactions.userId, DEMO_USER_ID),
+        isNull(transactions.transferId),
+        isNull(transactions.cardPaymentId)
+      )
+    )
     .all()
 }
 

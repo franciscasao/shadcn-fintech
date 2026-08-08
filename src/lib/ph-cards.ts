@@ -89,6 +89,10 @@ const PROFILE_OVERRIDES: Record<string, Partial<CardIssuerProfile>> = {
     products: ["debit", "prepaid"],
     cardTypes: ["physical", "virtual"],
   },
+  "maribank-ph": {
+    products: ["debit", "prepaid", "credit"],
+    note: "MariBank issues debit and prepaid cards by default; the MariBank Credit Card is available to eligible customers.",
+  },
   banko: {
     products: ["debit"],
   },
@@ -134,6 +138,16 @@ export const DEFAULT_LIMITS: Record<CardProduct, { daily: number; monthly: numbe
   debit: { daily: 5000, monthly: 20000 },
   credit: { daily: 10000, monthly: 50000 },
   prepaid: { daily: 1000, monthly: 3000 },
+}
+
+// Default credit-line terms for a newly-issued credit card (product ===
+// "credit" only — debit/prepaid cards never carry these). See @/lib/credit
+// for the statement-cycle math these feed into.
+export const DEFAULT_CREDIT_TERMS = {
+  creditLimit: 100000,
+  apr: 36,
+  statementDay: 15,
+  dueDay: 5,
 }
 
 export type CardColor = { id: string; label: string; className: string }
@@ -196,4 +210,10 @@ export type NewCardInput = {
   dailyLimit?: number
   monthlyLimit?: number
   color?: string
+  // Credit terms — only meaningful (and only persisted) when product ===
+  // "credit". Falls back to DEFAULT_CREDIT_TERMS when omitted.
+  creditLimit?: number
+  apr?: number
+  statementDay?: number
+  dueDay?: number
 }

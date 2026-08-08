@@ -81,6 +81,18 @@ export function AddTransactionDialog({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // A credit card purchase has no funding account — its balance owed is
+  // derived from the ledger (see getCards() in @/server/queries/cards)
+  // instead. Clear + disable the Account field whenever one is selected, so
+  // the same transaction can't be double-counted against both a credit card
+  // and an account.
+  const selectedCard = cardId !== NO_CARD ? cards.find((c) => c.id === cardId) : undefined
+  const isCreditCard = selectedCard?.product === "credit"
+
+  useEffect(() => {
+    if (isCreditCard) setAccountId("")
+  }, [isCreditCard])
+
   // Reset whenever the dialog closes, whether the user dismissed it or the
   // parent closed it programmatically after a successful onAdd.
   useEffect(() => {
@@ -111,7 +123,7 @@ export function AddTransactionDialog({
     Number.isFinite(parsedAmount) &&
     parsedAmount > 0 &&
     category !== "" &&
-    accountId !== "" &&
+    (isCreditCard || accountId !== "") &&
     date !== ""
 
   async function handleSubmit() {
@@ -125,7 +137,7 @@ export function AddTransactionDialog({
         type,
         category,
         date,
-        accountId: Number(accountId),
+        accountId: isCreditCard ? null : Number(accountId),
         cardId: cardId !== NO_CARD ? Number(cardId) : undefined,
         status,
         notes: notes.trim() || undefined,
@@ -210,10 +222,14 @@ export function AddTransactionDialog({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Account">
-              <Select value={accountId} onValueChange={(v) => v && setAccountId(v)}>
+            <Field label={isCreditCard ? "Account (n/a — credit card)" : "Account"}>
+              <Select
+                value={accountId}
+                onValueChange={(v) => v && setAccountId(v)}
+                disabled={isCreditCard}
+              >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select account">
+                  <SelectValue placeholder={isCreditCard ? "Charged to card" : "Select account"}>
                     {(v: string) => accounts.find((a) => a.id === v)?.name ?? "Select account"}
                   </SelectValue>
                 </SelectTrigger>

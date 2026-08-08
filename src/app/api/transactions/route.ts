@@ -62,9 +62,16 @@ export async function POST(request: Request) {
   if (typeof date !== "string" || !ISO_DATE.test(date)) {
     return badRequest("date must be an ISO yyyy-MM-dd string")
   }
-  const resolvedAccountId = Number(accountId)
-  if (!Number.isInteger(resolvedAccountId)) {
-    return badRequest("accountId is required")
+  // accountId is only optional when the purchase is on a credit card (no
+  // funding account, by design — see NewTransactionInput); createTransaction
+  // itself rejects the invalid combinations (credit card + account, or no
+  // card + no account).
+  let resolvedAccountId: number | null = null
+  if (accountId !== undefined && accountId !== null && accountId !== "") {
+    resolvedAccountId = Number(accountId)
+    if (!Number.isInteger(resolvedAccountId)) {
+      return badRequest("accountId must be an integer")
+    }
   }
   let resolvedCardId: number | undefined
   if (cardId !== undefined && cardId !== null && cardId !== "") {
@@ -72,6 +79,9 @@ export async function POST(request: Request) {
     if (!Number.isInteger(resolvedCardId) || resolvedCardId <= 0) {
       return badRequest("cardId must be a positive integer")
     }
+  }
+  if (resolvedAccountId == null && resolvedCardId == null) {
+    return badRequest("accountId is required")
   }
   if (!STATUSES.includes(status)) {
     return badRequest("status must be one of completed, pending, failed")

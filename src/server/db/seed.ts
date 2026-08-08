@@ -11,6 +11,7 @@ import {
   accountFixtures,
   budgetCategoryFixtures,
   cardFixtures,
+  cardPaymentFixtures,
   categoryFixtures,
   contactFixtures,
   curatedTransactionFixtures,
@@ -25,6 +26,7 @@ async function main() {
 
   console.log("Clearing existing data...")
   db.delete(schema.transactions).run()
+  db.delete(schema.cardPayments).run()
   db.delete(schema.transfers).run()
   db.delete(schema.notifications).run()
   db.delete(schema.budgetCategories).run()
@@ -80,11 +82,31 @@ async function main() {
   const cardById = new Map(insertedCards.map((c) => [c.id, c]))
   // A transaction's account is whichever account funded the card it was
   // paid with (see the accountId comment on `cards` in ./schema) — falling
-  // back to the primary account for card-less transactions (income) and for
-  // credit cards, which carry no funding account by design.
-  function accountIdForCard(cardId: number | null): number {
-    return (cardId != null ? cardById.get(cardId)?.accountId : null) ?? primaryAccountId
+  // back to the primary account for card-less transactions (income). A
+  // credit card purchase gets no account at all: it has no funding account
+  // by design, and (unlike a debit/prepaid card) applying it to one here
+  // would double-count it once createCardPayment pays the balance down —
+  // see the accountId comment on NewTransactionInput in
+  // @/server/mutations/transactions.
+  function accountIdForCard(cardId: number | null): number | null {
+    if (cardId == null) return primaryAccountId
+    const card = cardById.get(cardId)
+    if (card?.product === "credit") return null
+    return card?.accountId ?? primaryAccountId
   }
+
+  console.log("Seeding card payments...")
+  db.insert(schema.cardPayments)
+    .values(
+      cardPaymentFixtures.map(({ cardLast4, fromAccountName, ...p }) => {
+        const cardId = cardIdByLast4.get(cardLast4)
+        if (!cardId) throw new Error(`Unknown card payment card: ${cardLast4}`)
+        const fromAccountId = accountIdByName.get(fromAccountName)
+        if (!fromAccountId) throw new Error(`Unknown card payment account: ${fromAccountName}`)
+        return { ...p, cardId, fromAccountId, userId: DEMO_USER_ID }
+      })
+    )
+    .run()
 
   console.log("Seeding transfers...")
   db.insert(schema.transfers)

@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm"
 
 import { DEMO_USER_ID, getDb } from "@/server/db"
-import { accounts, cards, transactions, transfers } from "@/server/db/schema"
+import { accounts, cardPayments, cards, transactions, transfers } from "@/server/db/schema"
 import type { BankAccount } from "@/lib/types"
 
 /** Shared row -> API-shape mapper, also used by @/server/mutations/accounts. */
@@ -65,7 +65,14 @@ export async function getPrimaryAccountId(): Promise<number> {
   return primary.id
 }
 
-export type AccountImpact = { transactions: number; transfers: number; cards: number }
+export type AccountImpact = {
+  transactions: number
+  transfers: number
+  cards: number
+  /** Card payments funded from this account — unlinked (from_account_id set
+   * to null), not deleted, when the account goes; see deleteAccount(). */
+  cardPayments: number
+}
 
 /** Counts of what deleting each account would take with it — powers the
  * delete-account confirmation dialog (see deleteAccount() in
@@ -101,10 +108,17 @@ export async function getAccountImpacts(): Promise<Record<string, AccountImpact>
     .groupBy(cards.accountId)
     .all()
 
+  const cardPaymentCounts = db
+    .select({ accountId: cardPayments.fromAccountId, count: sql<number>`count(*)` })
+    .from(cardPayments)
+    .where(eq(cardPayments.userId, DEMO_USER_ID))
+    .groupBy(cardPayments.fromAccountId)
+    .all()
+
   const impacts: Record<string, AccountImpact> = {}
   function ensure(id: number) {
     const key = String(id)
-    return (impacts[key] ??= { transactions: 0, transfers: 0, cards: 0 })
+    return (impacts[key] ??= { transactions: 0, transfers: 0, cards: 0, cardPayments: 0 })
   }
 
   for (const row of txCounts) {
@@ -122,6 +136,10 @@ export async function getAccountImpacts(): Promise<Record<string, AccountImpact>
   for (const row of cardCounts) {
     if (row.accountId == null) continue
     ensure(row.accountId).cards += row.count
+  }
+  for (const row of cardPaymentCounts) {
+    if (row.accountId == null) continue
+    ensure(row.accountId).cardPayments += row.count
   }
 
   return impacts

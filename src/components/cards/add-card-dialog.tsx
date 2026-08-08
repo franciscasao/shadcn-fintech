@@ -33,6 +33,7 @@ import {
   CARD_PRODUCT_LABELS,
   CARD_TYPE_LABELS,
   CUSTOM_ISSUER_PROFILE,
+  DEFAULT_CREDIT_TERMS,
   DEFAULT_LIMITS,
   NETWORK_LABELS,
   getCardIssuerProfile,
@@ -77,8 +78,16 @@ export function AddCardDialog({ open, onOpenChange, accounts, holderName, onAdd 
   const [color, setColor] = useState(CARD_COLORS[0].className)
   const [limitsOpen, setLimitsOpen] = useState(false)
 
+  // Credit terms — only collected (and only sent) when product === "credit".
+  const [creditLimit, setCreditLimit] = useState(String(DEFAULT_CREDIT_TERMS.creditLimit))
+  const [apr, setApr] = useState(String(DEFAULT_CREDIT_TERMS.apr))
+  const [statementDay, setStatementDay] = useState(String(DEFAULT_CREDIT_TERMS.statementDay))
+  const [dueDay, setDueDay] = useState(String(DEFAULT_CREDIT_TERMS.dueDay))
+
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const isCredit = product === "credit"
 
   function resetAll() {
     setStep("issuer")
@@ -94,6 +103,10 @@ export function AddCardDialog({ open, onOpenChange, accounts, holderName, onAdd 
     setMonthlyLimit("")
     setColor(CARD_COLORS[0].className)
     setLimitsOpen(false)
+    setCreditLimit(String(DEFAULT_CREDIT_TERMS.creditLimit))
+    setApr(String(DEFAULT_CREDIT_TERMS.apr))
+    setStatementDay(String(DEFAULT_CREDIT_TERMS.statementDay))
+    setDueDay(String(DEFAULT_CREDIT_TERMS.dueDay))
     setError(null)
   }
 
@@ -147,13 +160,23 @@ export function AddCardDialog({ open, onOpenChange, accounts, holderName, onAdd 
     setMonthlyLimit(String(limits.monthly))
   }
 
+  const dayOfMonth = /^([1-9]|[12]\d|3[01])$/
+
   const canSubmit =
     name.trim() !== "" &&
     holder.trim() !== "" &&
     type !== "" &&
     product !== "" &&
     network !== "" &&
-    (selection?.kind !== "custom" || issuerName.trim() !== "")
+    (selection?.kind !== "custom" || issuerName.trim() !== "") &&
+    (!isCredit ||
+      (creditLimit.trim() !== "" &&
+        Number(creditLimit) >= 0 &&
+        apr.trim() !== "" &&
+        Number(apr) >= 0 &&
+        Number(apr) <= 100 &&
+        dayOfMonth.test(statementDay) &&
+        dayOfMonth.test(dueDay)))
 
   async function handleSubmit() {
     if (!canSubmit || submitting || !selection) return
@@ -182,6 +205,10 @@ export function AddCardDialog({ open, onOpenChange, accounts, holderName, onAdd 
         dailyLimit: dailyLimit ? Number(dailyLimit) : undefined,
         monthlyLimit: monthlyLimit ? Number(monthlyLimit) : undefined,
         color,
+        creditLimit: isCredit && creditLimit ? Number(creditLimit) : undefined,
+        apr: isCredit && apr ? Number(apr) : undefined,
+        statementDay: isCredit && statementDay ? Number(statementDay) : undefined,
+        dueDay: isCredit && dueDay ? Number(dueDay) : undefined,
       }
       await onAdd(input)
       // Success: parent closes the dialog via onOpenChange, which triggers resetAll.
@@ -251,11 +278,20 @@ export function AddCardDialog({ open, onOpenChange, accounts, holderName, onAdd 
 
               {selection?.kind === "account" && (
                 <div className="rounded-lg border p-3 text-xs text-muted-foreground">
-                  Funding account:{" "}
-                  <span className="font-medium text-foreground">
-                    {selection.account.name}
-                  </span>{" "}
-                  ({selection.account.institution} {selection.account.accountNumber})
+                  {isCredit ? (
+                    <>
+                      Issued via <span className="font-medium text-foreground">{selection.account.institution}</span> —
+                      credit cards draw on their own credit line, not {selection.account.name}.
+                    </>
+                  ) : (
+                    <>
+                      Funding account:{" "}
+                      <span className="font-medium text-foreground">
+                        {selection.account.name}
+                      </span>{" "}
+                      ({selection.account.institution} {selection.account.accountNumber})
+                    </>
+                  )}
                 </div>
               )}
 
@@ -333,6 +369,47 @@ export function AddCardDialog({ open, onOpenChange, accounts, holderName, onAdd 
                   <Input value={holder} onChange={(e) => setHolder(e.target.value)} />
                 </Field>
               </div>
+
+              {isCredit && (
+                <div className="grid grid-cols-2 gap-3 rounded-lg border p-3">
+                  <Field label="Credit limit (₱)">
+                    <Input
+                      type="number"
+                      min={0}
+                      value={creditLimit}
+                      onChange={(e) => setCreditLimit(e.target.value)}
+                    />
+                  </Field>
+                  <Field label="APR (%)">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.1}
+                      value={apr}
+                      onChange={(e) => setApr(e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Statement day">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={statementDay}
+                      onChange={(e) => setStatementDay(e.target.value)}
+                    />
+                  </Field>
+                  <Field label="Due day">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={dueDay}
+                      onChange={(e) => setDueDay(e.target.value)}
+                    />
+                  </Field>
+                </div>
+              )}
 
               {profile.note && (
                 <p className="text-xs text-muted-foreground">{profile.note}</p>

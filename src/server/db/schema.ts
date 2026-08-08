@@ -112,6 +112,34 @@ export const cards = sqliteTable("cards", {
   issuerLogo: text("issuer_logo").notNull().default(""),
   issuerTemplateId: text("issuer_template_id"),
   product: text("product", { enum: ["debit", "credit", "prepaid"] }).notNull().default("debit"),
+
+  // ── Credit terms (product = "credit" only; see @/lib/credit) ────────────
+  // Balance owed is never stored here — it's derived from the ledger (see
+  // getCards() in @/server/queries/cards) so it can't drift out of sync.
+  creditLimit: real("credit_limit"),
+  apr: real("apr"), // annual percentage rate, e.g. 36 for 36%
+  statementDay: integer("statement_day"), // 1-31, day the billing cycle closes
+  dueDay: integer("due_day"), // 1-31, day payment is due
+})
+
+// ── Card payments (money paid toward a credit card's balance) ──────────────
+// One-legged by design — unlike an internal transfer, only the funding
+// account's balance moves; the card's "balance owed" is derived (see
+// getCards() in @/server/queries/cards), not stored, so there's no second
+// leg to update. Mirrors the transfers/transactions.transferId link pattern
+// via transactions.cardPaymentId below.
+export const cardPayments = sqliteTable("card_payments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull().references(() => users.id),
+  cardId: integer("card_id").notNull().references(() => cards.id),
+  fromAccountId: integer("from_account_id").references(() => accounts.id),
+  amount: real("amount").notNull(),
+  date: text("date").notNull(), // ISO YYYY-MM-DD
+  status: text("status", { enum: ["completed", "pending", "scheduled"] })
+    .notNull()
+    .default("completed"),
+  note: text("note"),
+  createdAt: text("created_at").notNull().default(sql`(current_timestamp)`),
 })
 
 // ── Transactions (the ledger) ───────────────────────────────────────────────
@@ -134,6 +162,10 @@ export const transactions = sqliteTable("transactions", {
   // Set on both legs of an account-to-account transfer (see `transfers` below)
   // so analytics can exclude internal movement from income/spending totals.
   transferId: integer("transfer_id").references(() => transfers.id),
+  // Set on the funding-account debit leg of a credit card payment (see
+  // `cardPayments` above) — same exclude-from-analytics purpose as
+  // transferId, and the same "can't delete a linked leg directly" guard.
+  cardPaymentId: integer("card_payment_id").references(() => cardPayments.id),
 })
 
 // ── Transfers ────────────────────────────────────────────────────────────────
@@ -216,7 +248,13 @@ export const accountsRelations = relations(accounts, ({ many }) => ({
 
 export const cardsRelations = relations(cards, ({ one, many }) => ({
   transactions: many(transactions),
+  payments: many(cardPayments),
   account: one(accounts, { fields: [cards.accountId], references: [accounts.id] }),
+}))
+
+export const cardPaymentsRelations = relations(cardPayments, ({ one }) => ({
+  card: one(cards, { fields: [cardPayments.cardId], references: [cards.id] }),
+  fromAccount: one(accounts, { fields: [cardPayments.fromAccountId], references: [accounts.id] }),
 }))
 
 export const contactsRelations = relations(contacts, ({ many }) => ({
@@ -227,6 +265,7 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
   account: one(accounts, { fields: [transactions.accountId], references: [accounts.id] }),
   card: one(cards, { fields: [transactions.cardId], references: [cards.id] }),
   transfer: one(transfers, { fields: [transactions.transferId], references: [transfers.id] }),
+  cardPayment: one(cardPayments, { fields: [transactions.cardPaymentId], references: [cardPayments.id] }),
 }))
 
 export const transfersRelations = relations(transfers, ({ one }) => ({

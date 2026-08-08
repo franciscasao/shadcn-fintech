@@ -3,28 +3,39 @@
 import { useCallback, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 
-import type { BankAccount, CardData } from "@/lib/types"
+import type { BankAccount, CardData, CardPayment } from "@/lib/types"
 import type { NewCardInput } from "@/lib/ph-cards"
 import { InteractiveCard } from "@/components/cards/interactive-card"
 import { CardControls } from "@/components/cards/card-controls"
+import { CreditSummaryPanel } from "@/components/cards/credit-summary"
 import { IssueCard } from "@/components/cards/issue-card"
 import { CardList } from "@/components/cards/card-list"
 
 interface CardsPageClientProps {
   initialCards: CardData[]
+  initialPayments: CardPayment[]
   accounts: BankAccount[]
   holderName: string
+  defaultDate: string
 }
 
-export function CardsPageClient({ initialCards, accounts, holderName }: CardsPageClientProps) {
+export function CardsPageClient({
+  initialCards,
+  initialPayments,
+  accounts,
+  holderName,
+  defaultDate,
+}: CardsPageClientProps) {
   const router = useRouter()
   const cards = initialCards
+  const payments = initialPayments
   const [activeCardId, setActiveCardId] = useState<string>(initialCards[0]?.id)
   // Live slider value while dragging, separate from the committed server value —
   // avoids firing a network request on every tick of the drag.
   const [liveDailyLimit, setLiveDailyLimit] = useState<number | null>(null)
 
   const activeCard = cards.find((c) => c.id === activeCardId) ?? cards[0]
+  const activeCardPayments = payments.filter((p) => p.cardId === activeCard?.id)
   const frozenMap = useMemo(
     () => Object.fromEntries(cards.map((c) => [c.id, c.frozen])),
     [cards]
@@ -75,6 +86,46 @@ export function CardsPageClient({ initialCards, accounts, holderName }: CardsPag
     [router]
   )
 
+  const handlePay = useCallback(
+    async (input: { fromAccountId: string; amount: number; date: string; note?: string }) => {
+      const res = await fetch("/api/card-payments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cardId: activeCard.id, ...input }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error ?? "Failed to record payment")
+      }
+      router.refresh()
+    },
+    [activeCard, router]
+  )
+
+  const handleDeletePayment = useCallback(
+    async (paymentId: string) => {
+      await fetch(`/api/card-payments/${paymentId}`, { method: "DELETE" })
+      router.refresh()
+    },
+    [router]
+  )
+
+  const handleUpdateCreditTerms = useCallback(
+    async (terms: { creditLimit: number; apr: number; statementDay: number; dueDay: number }) => {
+      const res = await fetch(`/api/cards/${activeCard.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(terms),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error ?? "Failed to update credit terms")
+      }
+      router.refresh()
+    },
+    [activeCard, router]
+  )
+
   return (
     <div className="space-y-6">
       {/* Row 1: Interactive card + controls */}
@@ -82,7 +133,7 @@ export function CardsPageClient({ initialCards, accounts, holderName }: CardsPag
         <div className="flex items-start justify-center lg:col-span-7">
           <InteractiveCard card={activeCard} frozen={activeCard.frozen} />
         </div>
-        <div className="lg:col-span-5">
+        <div className="space-y-6 lg:col-span-5">
           <CardControls
             card={activeCard}
             frozen={activeCard.frozen}
@@ -90,7 +141,19 @@ export function CardsPageClient({ initialCards, accounts, holderName }: CardsPag
             dailyLimit={liveDailyLimit ?? activeCard.dailyLimit}
             onDailyLimitChange={handleDailyLimitChange}
             onDailyLimitCommit={handleDailyLimitCommit}
+            onUpdateCreditTerms={handleUpdateCreditTerms}
           />
+          {activeCard.product === "credit" && activeCard.credit && (
+            <CreditSummaryPanel
+              card={activeCard}
+              credit={activeCard.credit}
+              accounts={accounts}
+              payments={activeCardPayments}
+              defaultDate={defaultDate}
+              onPay={handlePay}
+              onDeletePayment={handleDeletePayment}
+            />
+          )}
         </div>
       </div>
 

@@ -107,9 +107,9 @@ export const PH_INSTITUTIONS: InstitutionTemplate[] = [
     note: "Interest is credited daily at end of day. Base rate shown — promos can push the effective yield higher on balances up to ₱100,000.",
   },
   {
-    id: "seabank-ph",
-    name: "SeaBank Philippines",
-    logo: logo("seabank.ph"),
+    id: "maribank-ph",
+    name: "MariBank Philippines",
+    logo: logo("maribank.ph"),
     kind: "digital",
     group: "digital",
     color: "bg-orange-500",

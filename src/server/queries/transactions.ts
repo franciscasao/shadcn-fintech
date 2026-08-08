@@ -335,7 +335,9 @@ function toFullTransaction(row: {
     merchantInfo: t.merchantInfo ?? undefined,
     cardLast4: row.cards?.last4,
     transferId: t.transferId ?? undefined,
+    cardPaymentId: t.cardPaymentId ?? undefined,
     isTransfer: t.transferId != null,
+    isCardPayment: t.cardPaymentId != null,
   }
 }
 

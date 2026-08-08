@@ -38,6 +38,11 @@ function describeImpact(impact: AccountImpact | undefined): string {
   if (impact && impact.cards > 0) {
     clauses.push(`unlink ${impact.cards} card${impact.cards === 1 ? "" : "s"}`)
   }
+  if (impact && impact.cardPayments > 0) {
+    clauses.push(
+      `unlink ${impact.cardPayments} card payment${impact.cardPayments === 1 ? "" : "s"}`
+    )
+  }
   if (clauses.length === 0) return "It has no linked transactions, transfers, or cards."
   return `This will permanently ${clauses.join(", ")}.`
 }

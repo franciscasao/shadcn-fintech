@@ -1,7 +1,7 @@
 import { eq, inArray, or } from "drizzle-orm"
 
 import { DEMO_USER_ID, getDb } from "@/server/db"
-import { accounts, cards, transactions, transfers } from "@/server/db/schema"
+import { accounts, cardPayments, cards, transactions, transfers } from "@/server/db/schema"
 import { toBankAccount } from "@/server/queries/accounts"
 import { getInstitution, type NewAccountInput } from "@/lib/ph-institutions"
 import type { BankAccount } from "@/lib/types"
@@ -158,10 +158,19 @@ export async function deleteAccount(id: number): Promise<DeleteAccountResult> {
     }
 
     // The account's own (non-transfer) ledger rows — no balance reversal
-    // needed since the account itself is being removed.
+    // needed since the account itself is being removed. This also removes
+    // any card-payment debit leg filed against this account; the
+    // card_payments row itself survives (see below) since a card's balance
+    // owed is derived from it directly, not from the ledger leg.
     tx.delete(transactions).where(eq(transactions.accountId, id)).run()
 
     tx.update(cards).set({ accountId: null }).where(eq(cards.accountId, id)).run()
+
+    // Unlink rather than delete, same reasoning as cards.accountId above —
+    // and required before the account row can go: foreign_keys = ON (see
+    // @/server/db) means a dangling card_payments.from_account_id would
+    // block the delete below.
+    tx.update(cardPayments).set({ fromAccountId: null }).where(eq(cardPayments.fromAccountId, id)).run()
 
     tx.delete(accounts).where(eq(accounts.id, id)).run()
   })

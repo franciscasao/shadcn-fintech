@@ -92,8 +92,8 @@ export const accountFixtures: Omit<BankAccount, "id">[] = [
     changePercent: 5.2,
     lastActivity: "Today",
   }),
-  fromTemplate("seabank-ph", {
-    name: "SeaBank Savings",
+  fromTemplate("maribank-ph", {
+    name: "MariBank Savings",
     accountNumber: "****7821",
     balance: 35200.0,
     change: 880.5,
@@ -140,7 +140,11 @@ export const accountFixtures: Omit<BankAccount, "id">[] = [
 // above, so the seed data and the "issue a card" templates never drift
 // apart. `accountName` is resolved to a funding-account id in seed.ts —
 // null for credit cards, which draw on a credit line rather than a
-// deposit account.
+// deposit account. Credit terms (creditLimit/apr/statementDay/dueDay) are
+// only meaningful — and only ever set below — on product: "credit" cards;
+// `credit` itself (the derived balance-owed summary, see @/lib/credit) is
+// excluded from this fixture shape since it's computed from the ledger at
+// read time, never stored.
 type CardFixtureOverrides = {
   name: string
   last4: string
@@ -154,12 +158,16 @@ type CardFixtureOverrides = {
   dailyLimit: number
   monthlyLimit: number
   accountName: string | null
+  creditLimit?: number
+  apr?: number
+  statementDay?: number
+  dueDay?: number
 }
 
 function cardFromTemplate(
   templateId: string,
   overrides: CardFixtureOverrides
-): Omit<CardData, "id" | "monthlySpend" | "accountId"> & { accountName: string | null } {
+): Omit<CardData, "id" | "monthlySpend" | "accountId" | "credit"> & { accountName: string | null } {
   const t = getInstitution(templateId)
   if (!t) throw new Error(`Unknown institution template: ${templateId}`)
   return {
@@ -180,10 +188,14 @@ function cardFromTemplate(
     issuerLogo: t.logo,
     issuerTemplateId: t.id,
     product: overrides.product,
+    creditLimit: overrides.creditLimit ?? null,
+    apr: overrides.apr ?? null,
+    statementDay: overrides.statementDay ?? null,
+    dueDay: overrides.dueDay ?? null,
   }
 }
 
-export const cardFixtures: (Omit<CardData, "id" | "monthlySpend" | "accountId"> & {
+export const cardFixtures: (Omit<CardData, "id" | "monthlySpend" | "accountId" | "credit"> & {
   accountName: string | null
 })[] = [
   cardFromTemplate("bpi", {
@@ -211,6 +223,11 @@ export const cardFixtures: (Omit<CardData, "id" | "monthlySpend" | "accountId"> 
     dailyLimit: 3000,
     monthlyLimit: 8000,
     accountName: null,
+    // Paid off via cardPaymentFixtures below — demonstrates the "paid" state.
+    creditLimit: 60000,
+    apr: 32,
+    statementDay: 15,
+    dueDay: 5,
   }),
   cardFromTemplate("maya-bank", {
     name: "Virtual Shopping",
@@ -238,6 +255,13 @@ export const cardFixtures: (Omit<CardData, "id" | "monthlySpend" | "accountId"> 
     dailyLimit: 10000,
     monthlyLimit: 25000,
     accountName: null,
+    // No payment fixtures below — dueDay (5) trailing statementDay (28) by
+    // less than a month means the due date for the most recent statement
+    // has already passed as of LEDGER_ANCHOR, demonstrating "overdue".
+    creditLimit: 150000,
+    apr: 39,
+    statementDay: 28,
+    dueDay: 5,
   }),
   cardFromTemplate("gcash", {
     name: "GCash Virtual",
@@ -280,6 +304,10 @@ export const notificationFixtures: Omit<Notification, "id">[] = [
   { type: "transaction", title: "Payment Received", description: "You received ₱4,250.00 from Stripe Payout", time: "2 min ago", read: false, icon: "arrow-down-left" },
   { type: "security", title: "New Login Detected", description: "Your account was accessed from a new device in San Francisco, CA", time: "1 hour ago", read: false, icon: "shield-alert" },
   { type: "transaction", title: "Card Payment", description: "You paid ₱120.00 to AWS Cloud Services", time: "3 hours ago", read: false, icon: "credit-card" },
+  // Reflects the "overdue" state seeded on the Business Expense card (see
+  // its statementDay/dueDay comment in cardFixtures above) — no exact
+  // amount, since the ledger total it owes is randomly generated per reseed.
+  { type: "transaction", title: "Payment Overdue", description: "Your Business Expense card payment is overdue — pay now to avoid additional interest", time: "4 hours ago", read: false, icon: "credit-card" },
   { type: "system", title: "Budget Alert", description: "You've reached 90% of your Food & Dining budget", time: "5 hours ago", read: true, icon: "alert-triangle" },
   { type: "promotion", title: "Upgrade to Vault Pro", description: "Get advanced analytics, unlimited virtual cards, and priority support", time: "1 day ago", read: true, icon: "sparkles" },
   { type: "transaction", title: "Transfer Completed", description: "Your transfer of ₱250.00 to Sarah Chen was successful", time: "1 day ago", read: true, icon: "check-circle" },
@@ -371,4 +399,34 @@ export const curatedTransactionFixtures: (Omit<FullTransaction, "id" | "cardLast
   { merchant: "Shell Gas", transactionId: "INV_110099", amount: -52.3, date: "2026-03-19", logo: logo("shell.com"), category: "Transport", status: "failed", type: "expense", notes: "Card declined — insufficient funds", cardLast4: "7321" },
   { merchant: "Delta Airlines", transactionId: "INV_009988", amount: -389.0, date: "2026-03-18", logo: logo("delta.com"), category: "Travel", status: "pending", type: "expense", merchantInfo: "Delta Air Lines, Atlanta, GA", cardLast4: "9012" },
   { merchant: "Dividend — AAPL", transactionId: "TXN_889977", amount: 142.5, date: "2026-03-17", logo: logo("apple.com"), category: "Income", status: "completed", type: "income", notes: "Q1 2026 dividend payment" },
+]
+
+// ── Card payments ────────────────────────────────────────────────────────────
+// cardId/fromAccountId are resolved from cardLast4/fromAccountName in
+// seed.ts — same resolution pattern as curatedTransactionFixtures' cardLast4
+// and cardFixtures' accountName above. Seeded directly into card_payments
+// with no matching transactions leg (unlike a live payment via
+// createCardPayment in @/server/mutations/card-payments) — there's no
+// precedent for that in this file either (transferFixtures are all
+// single-leg "external" transfers; the linked-pair "internal" shape only
+// ever gets created live), and getCards() derives balance owed straight
+// from this table regardless.
+//
+// Travel Credit (7321) gets a partial payment followed by a payoff large
+// enough to clear a year of ledger spend on one card — demonstrating a
+// payment history plus the "paid" status. Business Expense (3456)
+// deliberately gets none, so its statement (see the "overdue" comment on
+// its cardFixtures entry above) sits unpaid — demonstrating "overdue".
+export type CardPaymentFixture = {
+  cardLast4: string
+  fromAccountName: string
+  amount: number
+  date: string
+  status?: "completed" | "pending" | "scheduled"
+  note?: string
+}
+
+export const cardPaymentFixtures: CardPaymentFixture[] = [
+  { cardLast4: "7321", fromAccountName: "Primary Checking", amount: 3000, date: "2026-03-01", note: "Partial payment" },
+  { cardLast4: "7321", fromAccountName: "Primary Checking", amount: 20000, date: "2026-04-05", note: "Paid in full" },
 ]

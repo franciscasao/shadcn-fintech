@@ -49,12 +49,19 @@ export type FullTransaction = {
   merchantInfo?: string
   cardLast4?: string
   transferId?: number
+  cardPaymentId?: number
   // Auto-generated leg of an internal (account-to-account) transfer — see
   // createInternalTransfer in @/server/mutations/transfers. These come in
   // linked pairs, so the delete UI refuses to remove just one leg. Always
   // populated by the query layer; optional only because the seed fixtures
   // in @/server/db/fixtures build this shape without it.
   isTransfer?: boolean
+  // Auto-generated funding-account debit leg of a credit card payment — see
+  // createCardPayment in @/server/mutations/card-payments. Single-legged
+  // (the card side is derived, not a ledger row), but still not directly
+  // deletable — delete the card payment instead. Same optional-for-fixtures
+  // caveat as isTransfer.
+  isCardPayment?: boolean
 }
 
 // ── Cards page ───────────────────────────────────────────────────────────────
@@ -87,6 +94,42 @@ export type CardData = {
   issuerLogo: string
   issuerTemplateId: string | null
   product: CardProduct
+  // Credit terms (product === "credit" only — null on debit/prepaid cards).
+  creditLimit: number | null
+  apr: number | null
+  statementDay: number | null
+  dueDay: number | null
+  // Derived from the ledger (see getCards() in @/server/queries/cards) —
+  // never stored, so it can't drift. Null on debit/prepaid cards.
+  credit: CreditSummary | null
+}
+
+// See @/lib/credit for the statement-cycle math behind these fields.
+export type CreditSummary = {
+  /** Total currently owed (all card spend minus all completed payments). */
+  balanceOwed: number
+  availableCredit: number
+  /** balanceOwed / creditLimit, clamped to [0, 1]. */
+  utilization: number
+  /** What's owed as of the last statement close — what the minimum/due
+   * date/interest figures below are computed from. */
+  statementBalance: number
+  dueDate: string // ISO YYYY-MM-DD
+  daysUntilDue: number
+  minimumDue: number
+  interestIfMinimumOnly: number
+  status: "paid" | "current" | "due_soon" | "overdue"
+}
+
+export type CardPayment = {
+  id: string
+  cardId: string
+  fromAccountId: string | null
+  fromAccountName: string | null
+  amount: number
+  date: string
+  status: "completed" | "pending" | "scheduled"
+  note?: string
 }
 
 // ── Analytics page ──────────────────────────────────────────────────────────
