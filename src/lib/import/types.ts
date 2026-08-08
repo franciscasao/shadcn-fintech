@@ -1,10 +1,11 @@
 // ---------------------------------------------------------------------------
-// Shared shapes for the "import transactions from a bank statement" feature.
-// Used by both the preview/import route handlers (src/app/api/transactions/
-// import/**) and the parsing/enrichment layer (src/server/import/**), plus
-// the client-side dialog (src/components/transactions/import/**) — kept
-// here rather than in src/server so the client can import the types without
-// pulling in server-only code.
+// Shared shapes for the "import transactions from a MariBank e-Statement
+// PDF" feature. Used by both the preview/import route handlers
+// (src/app/api/transactions/import/**) and the parsing/enrichment layer
+// (src/server/import/**), plus the client-side dialog
+// (src/components/transactions/import/**) — kept here rather than in
+// src/server so the client can import the types without pulling in
+// server-only code.
 // ---------------------------------------------------------------------------
 
 export const TX_TYPES = ["expense", "income"] as const
@@ -47,22 +48,14 @@ export type DraftTransaction = {
 export type PreviewOk = {
   ok: true
   rows: DraftTransaction[]
-  /** True when the file has money columns but couldn't be auto-mapped to
-   * date/description/amount — the dialog should fall back to a manual
-   * column-mapping step and resubmit with `mapping` set. */
-  needsMapping?: boolean
-  headers?: string[]
-  sampleRows?: string[][]
-  /** First few raw lines extracted from a PDF that didn't match the
-   * transaction-line heuristic, so the failure is visible instead of an
-   * empty table with no explanation. */
+  /** First few raw lines extracted from the PDF when no transaction table
+   * could be found, so the failure is visible instead of an empty table
+   * with no explanation. */
   unmatchedLines?: string[]
-  /** True when the chosen target is a credit card — statements from the
-   * issuer typically print purchases positive and payments as CR, the
-   * inverse of a deposit account's convention, so the dialog's "flip
-   * signs" toggle defaults on in that case. Purely a UI hint; the server
-   * doesn't flip anything itself. */
-  suggestedFlipSigns?: boolean
+  /** Set when the statement's own card number doesn't match the card the
+   * user is importing into — e.g. filing one card's statement under
+   * another. Purely informational; the server doesn't block the import. */
+  notice?: string
 }
 
 export type PreviewError = {
@@ -89,13 +82,4 @@ export type ImportResult = {
   created: number
   skippedDuplicates: number
   failed: Array<{ index: number; reason: string }>
-}
-
-export type ColumnMapping = {
-  date: number
-  description: number
-  amount?: number
-  debit?: number
-  credit?: number
-  balance?: number
 }

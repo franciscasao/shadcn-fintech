@@ -16,12 +16,6 @@ import {
 import { ImportDropzone } from "@/components/transactions/import/import-dropzone"
 import { ImportPreviewTable } from "@/components/transactions/import/import-preview-table"
 import { ImportRail, type ImportStep } from "@/components/transactions/import/import-rail"
-import {
-  ColumnMapTable,
-  emptyRoles,
-  rolesToMapping,
-  type MappingRole,
-} from "@/components/transactions/import/column-map-table"
 import { ImportSummary, type RowFilter } from "@/components/transactions/import/import-summary"
 import { ImportReceipt } from "@/components/transactions/import/import-receipt"
 import type { BankAccount, CardData } from "@/lib/types"
@@ -64,15 +58,10 @@ export function ImportStatementPageClient({
   const [accountId, setAccountId] = useState("")
   const [cardId, setCardId] = useState(NO_CARD)
 
-  const [mappingNeeded, setMappingNeeded] = useState(false)
-  const [headers, setHeaders] = useState<string[]>([])
-  const [sampleRows, setSampleRows] = useState<string[][]>([])
-  const [mapRoles, setMapRoles] = useState<MappingRole[]>([])
-
   const [rows, setRows] = useState<DraftTransaction[]>([])
   const [unmatchedLines, setUnmatchedLines] = useState<string[] | null>(null)
   const [rowFilter, setRowFilter] = useState<RowFilter>(null)
-  const [autoFlipped, setAutoFlipped] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
   const [result, setResult] = useState<ImportResult | null>(null)
 
   const [submitting, setSubmitting] = useState(false)
@@ -105,14 +94,10 @@ export function ImportStatementPageClient({
     setStep("upload")
     setFile(null)
     setCardId(NO_CARD)
-    setMappingNeeded(false)
-    setHeaders([])
-    setSampleRows([])
-    setMapRoles([])
     setRows([])
     setUnmatchedLines(null)
     setRowFilter(null)
-    setAutoFlipped(false)
+    setNotice(null)
     setResult(null)
     setError(null)
   }
@@ -125,7 +110,7 @@ export function ImportStatementPageClient({
 
   const canPreview = file !== null && (isCreditCard || accountId !== "")
 
-  async function requestPreview(mapping?: Record<string, number>) {
+  async function requestPreview() {
     if (!file) return
     setSubmitting(true)
     setError(null)
@@ -134,7 +119,6 @@ export function ImportStatementPageClient({
       form.append("file", file)
       if (!isCreditCard && accountId) form.append("accountId", accountId)
       if (cardId !== NO_CARD) form.append("cardId", cardId)
-      if (mapping) form.append("mapping", JSON.stringify(mapping))
 
       const res = await fetch("/api/transactions/import/preview", { method: "POST", body: form })
       const data: PreviewResponse = await res.json()
@@ -143,21 +127,9 @@ export function ImportStatementPageClient({
         setError(data.error)
         return
       }
-      if (data.needsMapping) {
-        const nextHeaders = data.headers ?? []
-        setHeaders(nextHeaders)
-        setSampleRows(data.sampleRows ?? [])
-        setMapRoles(emptyRoles(nextHeaders.length))
-        setMappingNeeded(true)
-        setStep("map")
-        return
-      }
 
-      const draftRows = data.suggestedFlipSigns
-        ? data.rows.map((r) => ({ ...r, type: r.type === "expense" ? ("income" as const) : ("expense" as const) }))
-        : data.rows
-      setRows(draftRows)
-      setAutoFlipped(!!data.suggestedFlipSigns)
+      setRows(data.rows)
+      setNotice(data.notice ?? null)
       setUnmatchedLines(data.unmatchedLines ?? null)
       setRowFilter(null)
       setStep("review")
@@ -168,23 +140,8 @@ export function ImportStatementPageClient({
     }
   }
 
-  const mapping = rolesToMapping(mapRoles)
-  const mapMissing: string[] = []
-  if (mapping.date === undefined) mapMissing.push("Date")
-  if (mapping.description === undefined) mapMissing.push("Description")
-  if (mapping.amount === undefined && mapping.debit === undefined && mapping.credit === undefined) {
-    mapMissing.push("Amount (or Debit/Credit)")
-  }
-  const canSubmitMapping = mapMissing.length === 0
-
-  function handleMappingSubmit() {
-    if (!canSubmitMapping) return
-    requestPreview(mapping as Record<string, number>)
-  }
-
   function handleFlipAll() {
     setRows((prev) => prev.map((r) => ({ ...r, type: r.type === "expense" ? "income" : "expense" })))
-    setAutoFlipped(false)
   }
 
   function handleBulkCategory(category: string) {
@@ -236,7 +193,7 @@ export function ImportStatementPageClient({
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">Import transactions</h1>
         <p className="text-sm text-muted-foreground">
-          Upload a bank or card statement — we&apos;ll draft the transactions for you to review before anything&apos;s
+          Upload a MariBank e-Statement PDF — we&apos;ll draft the transactions for you to review before anything&apos;s
           written to your ledger.
         </p>
       </div>
@@ -244,7 +201,6 @@ export function ImportStatementPageClient({
       <div className="flex flex-1 flex-col gap-4 lg:flex-row lg:gap-6">
         <ImportRail
           step={step}
-          mappingNeeded={mappingNeeded}
           file={file}
           targetLabel={targetLabel}
           targetSubLabel={targetSubLabel}
@@ -337,44 +293,6 @@ export function ImportStatementPageClient({
             </div>
           )}
 
-          {step === "map" && (
-            <div className="flex flex-col gap-3">
-              <p className="text-sm text-muted-foreground">
-                We couldn&apos;t recognize this file&apos;s columns automatically — match them to the data below.
-              </p>
-
-              <ColumnMapTable headers={headers} sampleRows={sampleRows} roles={mapRoles} onRolesChange={setMapRoles} />
-
-              {error && <p className="text-sm text-destructive">{error}</p>}
-
-              <div className="flex max-w-xl flex-col gap-1.5">
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => setStep("upload")}>
-                    Back
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="flex-1"
-                    disabled={!canSubmitMapping || submitting}
-                    onClick={handleMappingSubmit}
-                  >
-                    {submitting ? (
-                      <>
-                        <LoaderIcon className="size-4 animate-spin" />
-                        Reading…
-                      </>
-                    ) : (
-                      "Preview"
-                    )}
-                  </Button>
-                </div>
-                {!canSubmitMapping && (
-                  <p className="text-xs text-muted-foreground">Still need: {mapMissing.join(", ")}</p>
-                )}
-              </div>
-            </div>
-          )}
-
           {step === "review" && (
             <div className="flex flex-col gap-3">
               {rows.length === 0 ? (
@@ -388,7 +306,9 @@ export function ImportStatementPageClient({
                       </pre>
                     </>
                   ) : (
-                    <p className="mb-3 text-sm text-muted-foreground">Try a different file, or export a CSV instead.</p>
+                    <p className="mb-3 text-sm text-muted-foreground">
+                      Try a different file — only MariBank e-Statement PDFs are supported.
+                    </p>
                   )}
                   <Button variant="outline" size="sm" onClick={backToFileSelection}>
                     Choose a different file
@@ -403,7 +323,7 @@ export function ImportStatementPageClient({
                     onFilterChange={setRowFilter}
                     onFlipAll={handleFlipAll}
                     onBulkCategory={handleBulkCategory}
-                    autoFlipped={autoFlipped}
+                    notice={notice}
                   />
                   <ImportPreviewTable
                     rows={rows}

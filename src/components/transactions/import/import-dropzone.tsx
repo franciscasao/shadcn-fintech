@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button"
 // deliberately minimal: a bordered drop target plus a hidden native file
 // input for click-to-browse, no cropping/preview/multi-file machinery.
 
-const ACCEPT = ".csv,.pdf,text/csv,application/pdf"
-const ACCEPTED_EXTENSIONS = [".csv", ".pdf"]
+const ACCEPT = ".pdf,application/pdf"
+const ACCEPTED_EXTENSIONS = [".pdf"]
 const MAX_FILE_BYTES = 10 * 1024 * 1024 // mirrors MAX_FILE_BYTES in the preview route
 
 interface ImportDropzoneProps {
@@ -23,7 +23,7 @@ interface ImportDropzoneProps {
 function validate(file: File): string | null {
   const name = file.name.toLowerCase()
   if (!ACCEPTED_EXTENSIONS.some((ext) => name.endsWith(ext))) {
-    return "That doesn't look like a CSV or PDF — pick a different file"
+    return "That doesn't look like a PDF — pick a different file"
   }
   if (file.size > MAX_FILE_BYTES) {
     return `File is too big — statements must be under ${MAX_FILE_BYTES / (1024 * 1024)} MB`
@@ -70,9 +70,7 @@ export function ImportDropzone({ file, onFileSelected }: ImportDropzoneProps) {
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{file.name}</p>
-          <p className="text-xs text-muted-foreground">
-            {(file.size / 1024).toFixed(0)} KB · {file.name.toLowerCase().endsWith(".pdf") ? "PDF" : "CSV"}
-          </p>
+          <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB · PDF</p>
         </div>
         <Button variant="ghost" size="icon-sm" onClick={() => pick(null)} aria-label="Remove file">
           <XIcon className="size-4" />
@@ -106,8 +104,8 @@ export function ImportDropzone({ file, onFileSelected }: ImportDropzoneProps) {
         >
           <UploadIcon className={cn("size-5", dragging ? "text-primary" : "text-muted-foreground")} />
         </div>
-        <p className="text-sm font-medium">Drop a bank statement, or click to browse</p>
-        <p className="text-xs text-muted-foreground">CSV or PDF, up to 10 MB</p>
+        <p className="text-sm font-medium">Drop a MariBank e-Statement, or click to browse</p>
+        <p className="text-xs text-muted-foreground">MariBank e-Statement PDF, up to 10 MB</p>
         <input
           ref={inputRef}
           type="file"

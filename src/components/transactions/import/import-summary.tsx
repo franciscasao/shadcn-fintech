@@ -1,7 +1,7 @@
 "use client"
 
 import type { ComponentType } from "react"
-import { ArrowUpDownIcon, CheckCircle2Icon, CircleAlertIcon, CopyIcon, RotateCcwIcon, TagIcon } from "lucide-react"
+import { ArrowUpDownIcon, CheckCircle2Icon, CircleAlertIcon, CopyIcon, InfoIcon, TagIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -38,7 +38,7 @@ interface ImportSummaryProps {
   onFilterChange: (filter: RowFilter) => void
   onFlipAll: () => void
   onBulkCategory: (category: string) => void
-  autoFlipped: boolean
+  notice?: string | null
 }
 
 function Chip({
@@ -86,7 +86,7 @@ export function ImportSummary({
   onFilterChange,
   onFlipAll,
   onBulkCategory,
-  autoFlipped,
+  notice,
 }: ImportSummaryProps) {
   const included = rows.filter((r) => r.include)
   const needsCategoryCount = included.filter((r) => !r.category).length
@@ -158,20 +158,10 @@ export function ImportSummary({
         </div>
       </div>
 
-      {autoFlipped && (
+      {notice && (
         <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
-          <RotateCcwIcon className="size-3.5 shrink-0" />
-          <span>
-            Signs flipped automatically — credit-card statements print charges as positive amounts, the opposite of a
-            deposit account.
-          </span>
-          <button
-            type="button"
-            onClick={onFlipAll}
-            className="ml-auto shrink-0 font-medium text-foreground underline underline-offset-2"
-          >
-            Undo
-          </button>
+          <InfoIcon className="size-3.5 shrink-0" />
+          <span>{notice}</span>
         </div>
       )}
     </div>

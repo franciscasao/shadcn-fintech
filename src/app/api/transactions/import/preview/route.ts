@@ -1,19 +1,14 @@
 import { getCategories } from "@/server/queries/categories"
 import { getCards } from "@/server/queries/cards"
-import {
-  extractRows,
-  findHeaderRow,
-  guessHeaderRowIndex,
-  parseDelimited,
-} from "@/server/import/csv"
-import { extractPdfCandidates, extractPdfLines } from "@/server/import/pdf"
-import { parseMoney, parseStatementDate, resolveDateOrder } from "@/server/import/normalize"
+import { parseMariBankStatement, resolveRowDate } from "@/server/import/maribank"
+import { parseMoney } from "@/server/import/normalize"
 import { detectDuplicates, guessCategories, validateDraftRow } from "@/server/import/enrich"
-import type { ColumnMapping, DraftTransaction, PreviewResponse } from "@/lib/import/types"
+import type { DraftTransaction, PreviewResponse } from "@/lib/import/types"
 
-// Parses an uploaded bank statement (CSV or PDF) into an editable preview of
-// the transactions it would create — nothing is written to the database
-// here. See src/app/api/transactions/import/route.ts for the commit step.
+// Parses an uploaded MariBank MariCard credit e-Statement PDF into an
+// editable preview of the transactions it would create — nothing is
+// written to the database here. See src/app/api/transactions/import/route.ts
+// for the commit step.
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024
 const MAX_ROWS = 2000
@@ -24,69 +19,6 @@ function badRequest(error: string) {
 
 function isPdf(file: File): boolean {
   return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
-}
-
-type Candidate = { rawDate: string; description: string; amount: number; sourceLine: string }
-
-/** Parses the CSV/TSV branch, returning either extracted candidates or a
- * Response to send straight back (a validation failure, or a needsMapping
- * reply when no header row could be auto-detected). */
-function parseCsvCandidates(
-  text: string,
-  suppliedMapping: ColumnMapping | undefined
-): Candidate[] | Response {
-  const rows = parseDelimited(text)
-  if (rows.length === 0) return badRequest("The file appears to be empty")
-
-  let mapping = suppliedMapping
-  let dataRows: string[][]
-
-  if (mapping) {
-    // The header row is a pure function of the file's own content (the
-    // densest row in the first 20 lines), so re-deriving it here lines up
-    // with the `headers` this same file produced on the first, unmapped
-    // pass — no need to thread the index back and forth with the client.
-    dataRows = rows.slice(guessHeaderRowIndex(rows) + 1)
-  } else {
-    const detected = findHeaderRow(rows)
-    if (!detected) {
-      const headerIndex = guessHeaderRowIndex(rows)
-      return Response.json({
-        ok: true,
-        rows: [],
-        needsMapping: true,
-        headers: rows[headerIndex],
-        sampleRows: rows.slice(headerIndex + 1, headerIndex + 6),
-      } satisfies PreviewResponse)
-    }
-    mapping = detected.mapping
-    dataRows = rows.slice(detected.headerIndex + 1)
-  }
-
-  const candidates = extractRows(dataRows, mapping, parseMoney)
-  if (candidates.length === 0) return badRequest("No transaction rows found in this file")
-  return candidates
-}
-
-async function parsePdfCandidates(file: File): Promise<
-  { candidates: Candidate[]; unmatchedLines?: string[] } | Response
-> {
-  const data = new Uint8Array(await file.arrayBuffer())
-  const extracted = await extractPdfLines(data)
-  if (!extracted.ok) {
-    return badRequest(
-      "This PDF has no text layer (likely a scan) — export a CSV from your bank instead."
-    )
-  }
-
-  const { rows: pdfRows, unmatchedLines } = extractPdfCandidates(extracted.lines)
-  const candidates = pdfRows.map((r) => ({
-    rawDate: r.rawDate,
-    description: r.description,
-    amount: parseMoney(r.amountToken) ?? 0,
-    sourceLine: r.sourceLine,
-  }))
-  return { candidates, unmatchedLines: candidates.length === 0 ? unmatchedLines : undefined }
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -103,6 +35,9 @@ export async function POST(request: Request): Promise<Response> {
   }
   if (file.size > MAX_FILE_BYTES) {
     return badRequest(`File must be under ${MAX_FILE_BYTES / (1024 * 1024)} MB`)
+  }
+  if (!isPdf(file)) {
+    return badRequest("Only MariBank e-Statement PDFs are supported right now")
   }
 
   const accountIdRaw = form.get("accountId")
@@ -121,49 +56,47 @@ export async function POST(request: Request): Promise<Response> {
     return badRequest("Choose a target account or card before previewing")
   }
 
-  let mapping: ColumnMapping | undefined
-  const mappingRaw = form.get("mapping")
-  if (typeof mappingRaw === "string" && mappingRaw !== "") {
-    try {
-      mapping = JSON.parse(mappingRaw)
-    } catch {
-      return badRequest("mapping must be valid JSON")
+  const data = new Uint8Array(await file.arrayBuffer())
+  const parsed = await parseMariBankStatement(data)
+  if (!parsed.ok) {
+    if (parsed.reason === "no-text-layer") {
+      return badRequest(
+        "This PDF has no text layer (likely a scan) — download the e-Statement PDF from the MariBank app instead."
+      )
     }
-    if (typeof mapping?.date !== "number" || typeof mapping?.description !== "number") {
-      return badRequest("mapping must include date and description column indexes")
-    }
+    // "not-maribank" — the table's header labels weren't found anywhere in
+    // the file. Rather than a bare error, route through the same
+    // empty-rows + unmatchedLines display the review step already has, so
+    // the user can see what was actually read instead of just being told
+    // it failed.
+    return Response.json({
+      ok: true,
+      rows: [],
+      unmatchedLines: parsed.sampleLines,
+    } satisfies PreviewResponse)
   }
 
-  let candidates: Candidate[]
-  let unmatchedLines: string[] | undefined
-
-  if (isPdf(file)) {
-    const result = await parsePdfCandidates(file)
-    if (result instanceof Response) return result
-    candidates = result.candidates
-    unmatchedLines = result.unmatchedLines
-  } else {
-    const result = parseCsvCandidates(await file.text(), mapping)
-    if (result instanceof Response) return result
-    candidates = result
-  }
-
-  if (candidates.length > MAX_ROWS) {
+  if (parsed.rows.length > MAX_ROWS) {
     return badRequest(`This statement has more than ${MAX_ROWS} rows — split it and import in batches`)
   }
+  if (parsed.rows.length === 0) {
+    return badRequest("No transaction rows found in this file")
+  }
 
-  const preferDayFirst = resolveDateOrder(candidates.map((c) => c.rawDate))
-  const draftRows: DraftTransaction[] = candidates.map((c, i) => ({
-    draftId: `row-${i}`,
-    date: parseStatementDate(c.rawDate, preferDayFirst) ?? "",
-    merchant: c.description.trim(),
-    amount: Math.abs(c.amount),
-    type: c.amount < 0 ? "expense" : "income",
-    category: "",
-    include: true,
-    issues: [],
-    sourceLine: c.sourceLine,
-  }))
+  const draftRows: DraftTransaction[] = parsed.rows.map((r, i) => {
+    const signed = parseMoney(r.amountToken) ?? 0
+    return {
+      draftId: `row-${i}`,
+      date: resolveRowDate(r.postedDate || r.transactionDate, parsed.meta) ?? "",
+      merchant: (r.descriptionLines[0] ?? "").trim(),
+      amount: Math.abs(signed),
+      type: signed < 0 ? "expense" : "income",
+      category: "",
+      include: true,
+      issues: [],
+      sourceLine: r.sourceLine,
+    }
+  })
 
   const [categoryRows, cards] = await Promise.all([getCategories(), getCards()])
   const categoryNames = categoryRows.map((c) => c.name)
@@ -175,11 +108,14 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const card = cardId != null ? cards.find((c) => c.id === String(cardId)) : undefined
+  const notice =
+    card && parsed.meta.cardLast4 && card.last4 !== parsed.meta.cardLast4
+      ? `This statement is for card ••••${parsed.meta.cardLast4}, but you're importing into ••••${card.last4}.`
+      : undefined
 
   return Response.json({
     ok: true,
     rows: draftRows,
-    unmatchedLines,
-    suggestedFlipSigns: card?.product === "credit",
+    notice,
   } satisfies PreviewResponse)
 }

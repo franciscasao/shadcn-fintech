@@ -1,8 +1,8 @@
 import { isValid, parse, parseISO } from "date-fns"
 
 // ---------------------------------------------------------------------------
-// Text-cleanup helpers shared by the CSV and PDF statement parsers
-// (src/server/import/csv.ts, pdf.ts) and by the duplicate-detection /
+// Text-cleanup helpers shared by the MariBank statement parser
+// (src/server/import/maribank.ts) and by the duplicate-detection /
 // category-guessing pass (src/server/import/enrich.ts) — kept in one place
 // so those two consumers can't drift apart on what counts as "the same
 // merchant" or "the same amount".
@@ -64,43 +64,20 @@ const DATE_FORMATS = [
 ]
 
 /** Parses a statement date string into ISO yyyy-MM-dd, or null if none of
- * the known shapes fit. `preferDayFirst` disambiguates the numeric
- * slash/dash formats (e.g. "03/04/2026") — see resolveDateOrder below,
- * which decides it once per file from the file's own data rather than
- * guessing per row. */
-export function parseStatementDate(raw: string, preferDayFirst = false): string | null {
+ * the known shapes fit. MariBank's own date columns are always "DD MMM" /
+ * "DD MMM YYYY", so there's no day-first/month-first ambiguity to resolve
+ * here — DATE_FORMATS is just tried in order. */
+export function parseStatementDate(raw: string): string | null {
   const s = raw.trim().replace(/,/g, ", ").replace(/\s+/g, " ").trim()
   if (!s) return null
 
-  const numericFirst = preferDayFirst
-    ? ["dd/MM/yyyy", "dd-MM-yyyy", "dd/MM/yy"]
-    : ["MM/dd/yyyy", "MM-dd-yyyy", "MM/dd/yy"]
-  const ordered = [
-    "yyyy-MM-dd",
-    ...numericFirst,
-    ...DATE_FORMATS.filter((f) => !numericFirst.includes(f) && f !== "yyyy-MM-dd"),
-  ]
-
-  for (const fmt of ordered) {
+  for (const fmt of DATE_FORMATS) {
     const d = parse(s, fmt, new Date())
     if (isValid(d) && d.getFullYear() > 1990 && d.getFullYear() < 2100) {
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
     }
   }
   return null
-}
-
-/** Scans a batch of raw date strings and decides whether the file is
- * day-first (dd/MM) or month-first (MM/dd): if any row's first numeric
- * component exceeds 12, the file can't be month-first, so it's day-first.
- * Defaults to month-first (the more common convention in exported CSVs)
- * when the sample is ambiguous. */
-export function resolveDateOrder(rawDates: string[]): boolean {
-  for (const raw of rawDates) {
-    const m = raw.trim().match(/^(\d{1,2})[/-]/)
-    if (m && Number(m[1]) > 12) return true
-  }
-  return false
 }
 
 /** Collapses a merchant string to a comparable key: lowercase, strip

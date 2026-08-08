@@ -11,27 +11,19 @@ import { cn } from "@/lib/utils"
 // and the run's context (file, target, rows read) pinned below it so it
 // stays visible through review and commit instead of disappearing after
 // step 1.
-//
-// "Match columns" only appears once a file has actually needed manual
-// mapping (see `mappingNeeded`) — the rail shouldn't promise a step most
-// imports never hit.
 
-export type ImportStep = "upload" | "map" | "review" | "done"
+export type ImportStep = "upload" | "review" | "done"
 
 const STEP_LABELS: Record<ImportStep, string> = {
   upload: "Upload",
-  map: "Match columns",
   review: "Review",
   done: "Done",
 }
 
-function stepOrder(mappingNeeded: boolean): ImportStep[] {
-  return mappingNeeded ? ["upload", "map", "review", "done"] : ["upload", "review", "done"]
-}
+const ORDER: ImportStep[] = ["upload", "review", "done"]
 
 interface ImportRailProps {
   step: ImportStep
-  mappingNeeded: boolean
   file: File | null
   targetLabel: string | null
   targetSubLabel: string | null
@@ -41,14 +33,13 @@ interface ImportRailProps {
 
 export function ImportRail({
   step,
-  mappingNeeded,
   file,
   targetLabel,
   targetSubLabel,
   rowCount,
   onNavigate,
 }: ImportRailProps) {
-  const order = stepOrder(mappingNeeded)
+  const order = ORDER
   const currentIndex = order.indexOf(step)
 
   return (
