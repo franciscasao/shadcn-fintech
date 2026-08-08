@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react"
 import { motion, AnimatePresence } from "motion/react"
-import { PlusIcon, CopyIcon, CheckIcon } from "lucide-react"
+import { PlusIcon } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -28,7 +28,6 @@ export function IssueCard({ accounts, holderName, onCardCreated }: IssueCardProp
   const [dialogOpen, setDialogOpen] = useState(false)
   const [step, setStep] = useState<Step>("idle")
   const [newCard, setNewCard] = useState<CardData | null>(null)
-  const [copied, setCopied] = useState(false)
 
   const handleAdd = useCallback(
     async (input: NewCardInput) => {
@@ -41,25 +40,17 @@ export function IssueCard({ accounts, holderName, onCardCreated }: IssueCardProp
       setTimeout(() => {
         setStep("idle")
         setNewCard(null)
-        setCopied(false)
       }, 4000)
     },
     [onCardCreated]
   )
 
-  const handleCopy = useCallback(() => {
-    if (!newCard) return
-    navigator.clipboard.writeText(newCard.cardNumber.replace(/\s/g, ""))
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
-  }, [newCard])
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Issue a Card</CardTitle>
+    <Card className="py-4">
+      <CardHeader className="px-4">
+        <CardTitle className="text-sm">Issue a Card</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4">
         <AnimatePresence mode="wait">
           {/* ── Idle ── */}
           {step === "idle" && (
@@ -69,10 +60,6 @@ export function IssueCard({ accounts, holderName, onCardCreated }: IssueCardProp
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
             >
-              <p className="mb-4 text-sm text-muted-foreground">
-                Issue a physical or virtual card from a linked account or any
-                Philippine bank.
-              </p>
               <Button onClick={() => setDialogOpen(true)} className="w-full">
                 <PlusIcon className="size-4" />
                 Issue a Card
@@ -97,49 +84,17 @@ export function IssueCard({ accounts, holderName, onCardCreated }: IssueCardProp
                   </p>
                 </div>
                 <motion.p
-                  className="font-mono text-sm font-medium tabular-nums"
+                  className="text-sm font-medium"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.6 }}
                 >
-                  {newCard.cardNumber}
+                  {newCard.name}
                 </motion.p>
-                <div className="mt-2 flex gap-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Exp</p>
-                    <p className="text-xs font-medium tabular-nums">
-                      {newCard.expiry}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">CVV</p>
-                    <p className="text-xs font-medium tabular-nums">
-                      {newCard.cvv}
-                    </p>
-                  </div>
-                </div>
+                <p className="mt-0.5 font-mono text-xs tabular-nums text-muted-foreground">
+                  •••• {newCard.last4}
+                </p>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleCopy()
-                }}
-              >
-                {copied ? (
-                  <>
-                    <CheckIcon className="size-3.5" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <CopyIcon className="size-3.5" />
-                    Copy Number
-                  </>
-                )}
-              </Button>
             </motion.div>
           )}
         </AnimatePresence>

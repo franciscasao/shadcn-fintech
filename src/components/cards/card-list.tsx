@@ -28,7 +28,7 @@ export function CardList({
   frozenMap,
 }: CardListProps) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+    <div className="flex max-h-[420px] flex-col gap-2.5 overflow-y-auto p-1 -m-1">
       {cards.map((card) => {
         const isFrozen = frozenMap[card.id] ?? false
         const isActive = card.id === activeCardId
@@ -39,7 +39,7 @@ export function CardList({
             type="button"
             onClick={() => onSelect(card.id)}
             className={cn(
-              "relative aspect-[1.586/1] w-full cursor-pointer overflow-hidden rounded-xl p-3 text-left transition-all",
+              "relative aspect-[3.2/1] w-full cursor-pointer overflow-hidden rounded-xl p-3 text-left transition-all",
               card.color,
               isActive && "ring-2 ring-primary ring-offset-2 ring-offset-background",
               isFrozen && "opacity-50 grayscale",
@@ -61,11 +61,11 @@ export function CardList({
                   className="h-5 w-auto shrink-0 object-contain"
                 />
               </div>
-              <div>
-                <p className="font-mono text-[10px] tabular-nums opacity-80">
+              <div className="flex items-end justify-between gap-1">
+                <p className="font-mono text-xs tabular-nums opacity-80">
                   **** {card.last4}
                 </p>
-                <p className="mt-0.5 text-[10px] font-medium tabular-nums opacity-70">
+                <p className="text-xs font-medium tabular-nums opacity-70">
                   {formatCurrency(card.monthlySpend)} spent
                 </p>
               </div>

@@ -1,7 +1,13 @@
 import { getCards } from "@/server/queries/cards"
 import { createCard, type NewCardInput } from "@/server/mutations/cards"
 import { getInstitution } from "@/lib/ph-institutions"
-import { getCardIssuerProfile, CUSTOM_ISSUER_PROFILE, isValidCardColor } from "@/lib/ph-cards"
+import {
+  getCardIssuerProfile,
+  CUSTOM_ISSUER_PROFILE,
+  isValidCardColor,
+  isValidLast4,
+  isValidExpiry,
+} from "@/lib/ph-cards"
 
 const CARD_TYPES = ["physical", "virtual"] as const
 const CARD_PRODUCTS = ["debit", "credit", "prepaid"] as const
@@ -36,6 +42,8 @@ export async function POST(request: Request) {
   const {
     name,
     holder,
+    last4,
+    expiry,
     accountId,
     issuerTemplateId,
     issuer,
@@ -56,6 +64,12 @@ export async function POST(request: Request) {
   }
   if (typeof holder !== "string" || !holder.trim()) {
     return badRequest("holder is required")
+  }
+  if (!isValidLast4(last4)) {
+    return badRequest("last4 must be exactly 4 digits")
+  }
+  if (!isValidExpiry(expiry)) {
+    return badRequest("expiry must be in MM/YY format")
   }
 
   let resolvedTemplateId: string | null = null
@@ -137,6 +151,8 @@ export async function POST(request: Request) {
     product,
     network,
     holder: holder.trim(),
+    last4,
+    expiry,
     dailyLimit: dailyLimit ?? undefined,
     monthlyLimit: monthlyLimit ?? undefined,
     color: color ?? undefined,

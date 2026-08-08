@@ -43,6 +43,13 @@
       "when": 1786158792694,
       "tag": "0005_fixed_lenny_balinger",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1786162625971,
+      "tag": "0006_vengeful_doctor_faustus",
+      "breakpoints": true
     }
   ]
 }

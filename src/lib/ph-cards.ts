@@ -176,6 +176,19 @@ export function isValidCardColor(className: string | undefined | null): boolean 
   return SAFE_CLASS_PATTERN.test(className)
 }
 
+// The app never generates a real card number or CVV — those stay with the
+// physical/virtual card, not this demo. Instead the user types the last 4
+// digits and expiry printed on their card, validated here so the dialog,
+// the API route, and the mutation layer all agree on the shape.
+export function isValidLast4(value: unknown): value is string {
+  return typeof value === "string" && /^\d{4}$/.test(value)
+}
+
+/** Card expiry in MM/YY form, e.g. "09/28". */
+export function isValidExpiry(value: unknown): value is string {
+  return typeof value === "string" && /^(0[1-9]|1[0-2])\/\d{2}$/.test(value)
+}
+
 export const CARD_PRODUCT_LABELS: Record<CardProduct, string> = {
   debit: "Debit",
   credit: "Credit",
@@ -207,6 +220,10 @@ export type NewCardInput = {
   product: CardProduct
   network: CardNetwork
   holder: string
+  /** Last 4 digits of the real card, entered by the user. */
+  last4: string
+  /** Expiry in MM/YY, entered by the user. */
+  expiry: string
   dailyLimit?: number
   monthlyLimit?: number
   color?: string

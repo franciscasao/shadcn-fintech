@@ -37,6 +37,8 @@ import {
   DEFAULT_LIMITS,
   NETWORK_LABELS,
   getCardIssuerProfile,
+  isValidExpiry,
+  isValidLast4,
   type CardIssuerProfile,
   type NewCardInput,
 } from "@/lib/ph-cards"
@@ -61,6 +63,12 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   )
 }
 
+/** Formats raw expiry keystrokes into MM/YY as the user types, e.g. "0928" -> "09/28". */
+function formatExpiryInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 4)
+  return digits.length > 2 ? `${digits.slice(0, 2)}/${digits.slice(2)}` : digits
+}
+
 export function AddCardDialog({ open, onOpenChange, accounts, holderName, onAdd }: AddCardDialogProps) {
   const [step, setStep] = useState<Step>("issuer")
   const [selection, setSelection] = useState<CardIssuerSelection | null>(null)
@@ -72,6 +80,8 @@ export function AddCardDialog({ open, onOpenChange, accounts, holderName, onAdd 
   const [product, setProduct] = useState<CardProduct | "">("")
   const [network, setNetwork] = useState<CardNetwork | "">("")
   const [holder, setHolder] = useState(holderName)
+  const [last4, setLast4] = useState("")
+  const [expiry, setExpiry] = useState("")
 
   const [dailyLimit, setDailyLimit] = useState("")
   const [monthlyLimit, setMonthlyLimit] = useState("")
@@ -99,6 +109,8 @@ export function AddCardDialog({ open, onOpenChange, accounts, holderName, onAdd 
     setProduct("")
     setNetwork("")
     setHolder(holderName)
+    setLast4("")
+    setExpiry("")
     setDailyLimit("")
     setMonthlyLimit("")
     setColor(CARD_COLORS[0].className)
@@ -168,6 +180,8 @@ export function AddCardDialog({ open, onOpenChange, accounts, holderName, onAdd 
     type !== "" &&
     product !== "" &&
     network !== "" &&
+    isValidLast4(last4) &&
+    isValidExpiry(expiry) &&
     (selection?.kind !== "custom" || issuerName.trim() !== "") &&
     (!isCredit ||
       (creditLimit.trim() !== "" &&
@@ -202,6 +216,8 @@ export function AddCardDialog({ open, onOpenChange, accounts, holderName, onAdd 
         product: product as CardProduct,
         network: network as CardNetwork,
         holder: holder.trim(),
+        last4,
+        expiry,
         dailyLimit: dailyLimit ? Number(dailyLimit) : undefined,
         monthlyLimit: monthlyLimit ? Number(monthlyLimit) : undefined,
         color,
@@ -243,7 +259,7 @@ export function AddCardDialog({ open, onOpenChange, accounts, holderName, onAdd 
           <DialogDescription>
             {step === "issuer"
               ? "Choose a linked account or a Philippine bank to issue the card from."
-              : "Review the prefilled details, then issue the card."}
+              : "Enter the card's last 4 digits and expiry, then issue the card."}
           </DialogDescription>
         </DialogHeader>
 
@@ -312,6 +328,27 @@ export function AddCardDialog({ open, onOpenChange, accounts, holderName, onAdd 
                   placeholder="e.g. Everyday Debit"
                 />
               </Field>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Last 4 digits">
+                  <Input
+                    value={last4}
+                    onChange={(e) => setLast4(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    inputMode="numeric"
+                    placeholder="4589"
+                    className="tabular-nums"
+                  />
+                </Field>
+                <Field label="Expiry (MM/YY)">
+                  <Input
+                    value={expiry}
+                    onChange={(e) => setExpiry(formatExpiryInput(e.target.value))}
+                    inputMode="numeric"
+                    placeholder="09/28"
+                    className="tabular-nums"
+                  />
+                </Field>
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Card type">

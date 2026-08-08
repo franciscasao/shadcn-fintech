@@ -77,10 +77,8 @@ export type CardData = {
   name: string
   type: "physical" | "virtual"
   last4: string
-  cardNumber: string
   holder: string
   expiry: string
-  cvv: string
   network: CardNetwork
   frozen: boolean
   dailyLimit: number

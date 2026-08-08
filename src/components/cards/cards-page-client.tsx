@@ -127,42 +127,38 @@ export function CardsPageClient({
   )
 
   return (
-    <div className="space-y-6">
-      {/* Row 1: Interactive card + controls */}
-      <div className="grid gap-6 lg:grid-cols-12">
-        <div className="flex items-start justify-center lg:col-span-7">
+    <div className="grid gap-6 lg:grid-cols-12">
+      {/* Main column: card preview + controls + credit summary */}
+      <div className="space-y-6 lg:col-span-8">
+        <div className="flex justify-start">
           <InteractiveCard card={activeCard} frozen={activeCard.frozen} />
         </div>
-        <div className="space-y-6 lg:col-span-5">
-          <CardControls
+        <CardControls
+          card={activeCard}
+          frozen={activeCard.frozen}
+          onToggleFreeze={toggleFreeze}
+          dailyLimit={liveDailyLimit ?? activeCard.dailyLimit}
+          onDailyLimitChange={handleDailyLimitChange}
+          onDailyLimitCommit={handleDailyLimitCommit}
+          onUpdateCreditTerms={handleUpdateCreditTerms}
+        />
+        {activeCard.product === "credit" && activeCard.credit && (
+          <CreditSummaryPanel
             card={activeCard}
-            frozen={activeCard.frozen}
-            onToggleFreeze={toggleFreeze}
-            dailyLimit={liveDailyLimit ?? activeCard.dailyLimit}
-            onDailyLimitChange={handleDailyLimitChange}
-            onDailyLimitCommit={handleDailyLimitCommit}
-            onUpdateCreditTerms={handleUpdateCreditTerms}
+            credit={activeCard.credit}
+            accounts={accounts}
+            payments={activeCardPayments}
+            defaultDate={defaultDate}
+            onPay={handlePay}
+            onDeletePayment={handleDeletePayment}
           />
-          {activeCard.product === "credit" && activeCard.credit && (
-            <CreditSummaryPanel
-              card={activeCard}
-              credit={activeCard.credit}
-              accounts={accounts}
-              payments={activeCardPayments}
-              defaultDate={defaultDate}
-              onPay={handlePay}
-              onDeletePayment={handleDeletePayment}
-            />
-          )}
-        </div>
+        )}
       </div>
 
-      {/* Row 2: Issue-card panel + card list */}
-      <div className="grid gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-4">
+      {/* Right rail: issue-card panel + card selector, pinned while the main column scrolls */}
+      <div className="lg:col-span-4">
+        <div className="space-y-4 lg:sticky lg:top-4">
           <IssueCard accounts={accounts} holderName={holderName} onCardCreated={handleCardCreated} />
-        </div>
-        <div className="lg:col-span-8">
           <CardList
             cards={cards}
             activeCardId={activeCardId}

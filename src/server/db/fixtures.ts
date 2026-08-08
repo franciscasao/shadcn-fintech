@@ -148,9 +148,7 @@ export const accountFixtures: Omit<BankAccount, "id">[] = [
 type CardFixtureOverrides = {
   name: string
   last4: string
-  cardNumber: string
   expiry: string
-  cvv: string
   network: CardData["network"]
   type: CardData["type"]
   product: CardData["product"]
@@ -174,10 +172,8 @@ function cardFromTemplate(
     name: overrides.name,
     type: overrides.type,
     last4: overrides.last4,
-    cardNumber: overrides.cardNumber,
     holder: "ALEX MORGAN",
     expiry: overrides.expiry,
-    cvv: overrides.cvv,
     network: overrides.network,
     frozen: overrides.frozen ?? false,
     dailyLimit: overrides.dailyLimit,
@@ -203,9 +199,7 @@ export const cardFixtures: (Omit<CardData, "id" | "monthlySpend" | "accountId" |
     type: "physical",
     product: "debit",
     last4: "4589",
-    cardNumber: "**** **** **** 4589",
     expiry: "09/28",
-    cvv: "317",
     network: "visa",
     dailyLimit: 5000,
     monthlyLimit: 10000,
@@ -216,9 +210,7 @@ export const cardFixtures: (Omit<CardData, "id" | "monthlySpend" | "accountId" |
     type: "physical",
     product: "credit",
     last4: "7321",
-    cardNumber: "**** **** **** 7321",
     expiry: "03/27",
-    cvv: "892",
     network: "mastercard",
     dailyLimit: 3000,
     monthlyLimit: 8000,
@@ -234,9 +226,7 @@ export const cardFixtures: (Omit<CardData, "id" | "monthlySpend" | "accountId" |
     type: "virtual",
     product: "debit",
     last4: "9012",
-    cardNumber: "**** **** **** 9012",
     expiry: "12/26",
-    cvv: "445",
     network: "visa",
     dailyLimit: 1000,
     monthlyLimit: 3000,
@@ -247,9 +237,7 @@ export const cardFixtures: (Omit<CardData, "id" | "monthlySpend" | "accountId" |
     type: "physical",
     product: "credit",
     last4: "3456",
-    cardNumber: "**** **** **** 3456",
     expiry: "06/29",
-    cvv: "661",
     network: "mastercard",
     frozen: true,
     dailyLimit: 10000,
@@ -268,9 +256,7 @@ export const cardFixtures: (Omit<CardData, "id" | "monthlySpend" | "accountId" |
     type: "virtual",
     product: "prepaid",
     last4: "2201",
-    cardNumber: "**** **** **** 2201",
     expiry: "01/29",
-    cvv: "530",
     network: "mastercard",
     dailyLimit: 1000,
     monthlyLimit: 3000,
