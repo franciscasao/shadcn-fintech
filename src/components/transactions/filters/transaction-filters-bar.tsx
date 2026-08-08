@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { PlusIcon, SearchIcon } from "lucide-react"
+import Link from "next/link"
+import { PlusIcon, SearchIcon, UploadIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { useDebouncedValue } from "@/hooks/use-debounced-value"
@@ -159,6 +160,17 @@ export function TransactionFiltersBar({
         onAmountChange={onAmountChange}
         onReset={onResetMoreFilters}
       />
+
+      <Button
+        variant="outline"
+        size="sm"
+        className="gap-1"
+        nativeButton={false}
+        render={<Link href="/transactions/import" />}
+      >
+        <UploadIcon className="size-4" />
+        Import
+      </Button>
 
       <Button size="sm" className="gap-1" onClick={onAddTransaction}>
         <PlusIcon className="size-4" />

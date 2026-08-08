@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -15,6 +16,7 @@ const labelMap: Record<string, string> = {
   dashboard: "Dashboard",
   accounts: "Accounts",
   transactions: "Transactions",
+  import: "Import",
   transfers: "Transfers",
   cards: "Cards",
   crypto: "Crypto",
@@ -42,18 +44,18 @@ export function DynamicBreadcrumb() {
           const isLast = index === segments.length - 1
 
           return (
-            <BreadcrumbItem key={href} className={index === 0 && segments.length > 1 ? "hidden md:block" : undefined}>
-              {isLast ? (
-                <BreadcrumbPage>{label}</BreadcrumbPage>
-              ) : (
-                <>
+            <React.Fragment key={href}>
+              <BreadcrumbItem className={index === 0 && segments.length > 1 ? "hidden md:block" : undefined}>
+                {isLast ? (
+                  <BreadcrumbPage>{label}</BreadcrumbPage>
+                ) : (
                   <BreadcrumbLink render={<Link href={href} />}>
                     {label}
                   </BreadcrumbLink>
-                  <BreadcrumbSeparator className="hidden md:block" />
-                </>
-              )}
-            </BreadcrumbItem>
+                )}
+              </BreadcrumbItem>
+              {!isLast && <BreadcrumbSeparator className="hidden md:block" />}
+            </React.Fragment>
           )
         })}
       </BreadcrumbList>

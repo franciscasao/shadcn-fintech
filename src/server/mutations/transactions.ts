@@ -29,6 +29,27 @@ export function generateTransactionId(): string {
   return `TXN_${Math.floor(100000 + Math.random() * 900000)}`
 }
 
+/** Enforces the credit-card/funding-account invariant that keeps balances
+ * from being double-counted: a credit card purchase must not name a funding
+ * account (its balance owed is derived from the ledger — see getCards() in
+ * @/server/queries/cards — so crediting an account here as well would
+ * double-count it once the bill is paid via createCardPayment), and every
+ * other transaction must name one. Shared by createTransaction below and by
+ * the bulk importer (@/server/mutations/import-transactions) so the rule
+ * only lives in one place. `card` is null when the transaction has no card
+ * at all. */
+export function assertCardAccountPairing(
+  card: { name: string; product: string } | null,
+  accountId: number | null
+): void {
+  if (card && card.product === "credit" && accountId != null) {
+    throw new Error(`${card.name} is a credit card — it has no funding account`)
+  }
+  if ((!card || card.product !== "credit") && accountId == null) {
+    throw new Error("accountId is required for a non-credit card transaction")
+  }
+}
+
 /** Records a manually-entered transaction and keeps the linked account's
  * balance in sync — an expense debits it, income credits it — atomically,
  * mirroring createTransfer() in @/server/mutations/transfers. When cardId
@@ -55,14 +76,9 @@ export async function createTransaction(input: NewTransactionInput): Promise<Ful
       }
       cardId = card.id
       cardLast4 = card.last4
-      if (card.product === "credit" && input.accountId != null) {
-        throw new Error(`${card.name} is a credit card — it has no funding account`)
-      }
-      if (card.product !== "credit" && input.accountId == null) {
-        throw new Error("accountId is required for a non-credit card transaction")
-      }
-    } else if (input.accountId == null) {
-      throw new Error("accountId is required")
+      assertCardAccountPairing(card, input.accountId)
+    } else {
+      assertCardAccountPairing(null, input.accountId)
     }
 
     const account =
