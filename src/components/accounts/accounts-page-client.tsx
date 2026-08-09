@@ -128,7 +128,7 @@ export function AccountsPageClient({
       </div>
 
       {/* Account grid + add card */}
-      {filtered.length === 0 ? (
+      {filtered.length === 0 && accounts.length > 0 ? (
         <EmptyState
           variant="filter"
           title="No accounts in this category"

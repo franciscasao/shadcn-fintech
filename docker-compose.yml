@@ -7,7 +7,7 @@ services:
       # directly from the network. Put a real access layer in front
       # (Tailscale `tailscale serve`, Cloudflare Access, an SSH tunnel...)
       # rather than widening this to "3000:3000".
-      - "127.0.0.1:3000:3000"
+      - "3010:3000"
     environment:
       DATABASE_URL: file:./data/app.db
       # See the Dockerfile's TZ comment — this drives every "this month" /
