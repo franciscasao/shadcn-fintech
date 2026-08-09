@@ -20,6 +20,11 @@
 // No accounts, cards, contacts, transfers, notifications, savings goals, or
 // transactions — none of that is reference data, and none of it belongs in
 // a real user's database until they add it themselves.
+//
+// SKIP_CATEGORY_SEED=true opts a deployment out of the category-fixtures
+// loop below (e.g. a server that manages its own category taxonomy some
+// other way). Everything else in bootstrap — the user row, budget buckets —
+// still seeds normally.
 
 import { eq, and } from "drizzle-orm"
 
@@ -38,17 +43,21 @@ export async function bootstrap() {
     console.log("[bootstrap] Seeded user.")
   }
 
-  for (const c of categoryFixtures) {
-    const existing = db
-      .select({ id: schema.categories.id })
-      .from(schema.categories)
-      .where(and(eq(schema.categories.userId, DEMO_USER_ID), eq(schema.categories.name, c.name)))
-      .get()
-    if (existing) continue
-    db.insert(schema.categories)
-      .values({ ...c, userId: DEMO_USER_ID })
-      .run()
-    console.log(`[bootstrap] Seeded category: ${c.name}`)
+  if (process.env.SKIP_CATEGORY_SEED === "true") {
+    console.log("[bootstrap] SKIP_CATEGORY_SEED=true — skipping category fixtures.")
+  } else {
+    for (const c of categoryFixtures) {
+      const existing = db
+        .select({ id: schema.categories.id })
+        .from(schema.categories)
+        .where(and(eq(schema.categories.userId, DEMO_USER_ID), eq(schema.categories.name, c.name)))
+        .get()
+      if (existing) continue
+      db.insert(schema.categories)
+        .values({ ...c, userId: DEMO_USER_ID })
+        .run()
+      console.log(`[bootstrap] Seeded category: ${c.name}`)
+    }
   }
 
   const hasAnyBudgetCategory = db

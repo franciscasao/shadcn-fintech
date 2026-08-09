@@ -14,6 +14,10 @@ services:
       # "last 30 days" / credit-card due-date window in the app. Change to
       # your own timezone if you're not in the Philippines.
       TZ: Asia/Manila
+      # Uncomment to opt this deployment out of auto-seeding the 13
+      # taxonomy categories on first boot (see src/server/db/bootstrap.ts).
+      # The user row and budget buckets still seed normally.
+      # SKIP_CATEGORY_SEED: "true"
     volumes:
       # Bind mount, not a named volume: this is real financial data, and it
       # needs to be reachable from the host for backups (see
