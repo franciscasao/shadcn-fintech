@@ -20,6 +20,16 @@ export const ICON_COLORS: Record<string, string> = {
   sparkles: "text-indigo-500",
   "check-square": "text-teal-500",
   banknote: "text-green-500",
+  scissors: "text-red-500",
+  "washing-machine": "text-sky-500",
+  "shopping-cart": "text-lime-500",
+  star: "text-yellow-500",
+  "shopping-basket": "text-stone-500",
+  "train-front": "text-violet-500",
+  "hand-coins": "text-gray-500",
+  shield: "text-zinc-500",
+  wifi: "text-neutral-500",
+  zap: "text-yellow-600",
 }
 
 export const KNOWN_ICON_NAMES = Object.keys(ICON_COLORS)

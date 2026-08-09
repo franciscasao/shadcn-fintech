@@ -1,7 +1,7 @@
-import { and, asc, eq, gte, lt, sql } from "drizzle-orm"
+import { and, asc, eq, gte, isNotNull, lt, sql } from "drizzle-orm"
 
 import { DEMO_USER_ID, getDb } from "@/server/db"
-import { budgetCategories, savingsGoals, transactions } from "@/server/db/schema"
+import { budgetCategories, categories, savingsGoals, transactions } from "@/server/db/schema"
 import { today, todayISO } from "@/lib/today"
 import { toISODate } from "@/server/db/format"
 import { getBudgetBucketMap } from "@/server/queries/categories"
@@ -75,6 +75,19 @@ export async function getBudgetCategories(): Promise<BudgetCategory[]> {
     .all()
   const spentByBucket = await getSpentByBucket()
 
+  // How many transaction categories point at each bucket by name (see
+  // categories.budgetBucket) — feeds the delete confirmation's impact copy.
+  const countRows = db
+    .select({
+      budgetBucket: categories.budgetBucket,
+      count: sql<number>`count(*)`.as("count"),
+    })
+    .from(categories)
+    .where(and(eq(categories.userId, DEMO_USER_ID), isNotNull(categories.budgetBucket)))
+    .groupBy(categories.budgetBucket)
+    .all()
+  const countByBucket = new Map(countRows.map((r) => [r.budgetBucket, r.count]))
+
   return rows.map((b) => ({
     id: String(b.id),
     category: b.category,
@@ -82,6 +95,7 @@ export async function getBudgetCategories(): Promise<BudgetCategory[]> {
     budget: b.budget,
     spent: Math.round((spentByBucket.get(b.category) ?? 0) * 100) / 100,
     color: b.color,
+    categoryCount: countByBucket.get(b.category) ?? 0,
   }))
 }
 

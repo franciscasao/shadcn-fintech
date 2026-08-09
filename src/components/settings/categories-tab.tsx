@@ -41,11 +41,12 @@ import type { Category } from "@/lib/types"
 
 interface CategoriesTabProps {
   categories: Category[]
+  buckets: string[]
 }
 
 type SortKey = "name" | "budgetBucket" | "transactionCount"
 
-export function CategoriesTab({ categories }: CategoriesTabProps) {
+export function CategoriesTab({ categories, buckets }: CategoriesTabProps) {
   const router = useRouter()
   const [dialogTarget, setDialogTarget] = useState<CategoryDialogTarget>(null)
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null)
@@ -198,6 +199,7 @@ export function CategoriesTab({ categories }: CategoriesTabProps) {
 
       <CategoryDialog
         target={dialogTarget}
+        buckets={buckets}
         onOpenChange={(open) => !open && setDialogTarget(null)}
         onCreate={handleCreate}
         onUpdate={handleUpdate}

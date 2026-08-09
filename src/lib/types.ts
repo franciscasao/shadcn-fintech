@@ -203,6 +203,9 @@ export type BudgetCategory = {
   budget: number
   spent: number
   color: string
+  /** How many transaction categories currently roll up into this bucket via
+   * categories.budgetBucket — powers the delete confirmation's impact copy. */
+  categoryCount: number
 }
 
 export type SavingsGoal = {

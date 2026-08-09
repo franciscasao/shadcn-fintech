@@ -11,6 +11,12 @@
 // deployment runs on every boot (see src/instrumentation.ts), and it's also
 // exposed directly as `pnpm db:bootstrap` for local use.
 //
+// Budget buckets are the one exception to "insert-if-missing per row": once
+// a user can rename/delete budgets (see @/server/mutations/budgets), reseeding
+// the 8 reference buckets by name on every boot would resurrect a deleted
+// one and duplicate a renamed one. So that loop only runs on a database that
+// has no budget_categories rows at all — a first, empty boot — never after.
+//
 // No accounts, cards, contacts, transfers, notifications, savings goals, or
 // transactions — none of that is reference data, and none of it belongs in
 // a real user's database until they add it themselves.
@@ -45,25 +51,21 @@ export async function bootstrap() {
     console.log(`[bootstrap] Seeded category: ${c.name}`)
   }
 
-  for (const b of budgetBucketReference) {
-    const existing = db
-      .select({ id: schema.budgetCategories.id })
-      .from(schema.budgetCategories)
-      .where(
-        and(
-          eq(schema.budgetCategories.userId, DEMO_USER_ID),
-          eq(schema.budgetCategories.category, b.category)
-        )
-      )
-      .get()
-    if (existing) continue
-    // budget: 0 — no target amount until the owner sets one. See the
-    // "hasBudget" guards in budget-rings.tsx and spending-limit.tsx, which
-    // treat 0 as "not configured" rather than "0 allowed to spend".
-    db.insert(schema.budgetCategories)
-      .values({ ...b, budget: 0, userId: DEMO_USER_ID })
-      .run()
-    console.log(`[bootstrap] Seeded budget bucket: ${b.category}`)
+  const hasAnyBudgetCategory = db
+    .select({ id: schema.budgetCategories.id })
+    .from(schema.budgetCategories)
+    .where(eq(schema.budgetCategories.userId, DEMO_USER_ID))
+    .get()
+  if (!hasAnyBudgetCategory) {
+    for (const b of budgetBucketReference) {
+      // budget: 0 — no target amount until the owner sets one. See the
+      // "hasBudget" guards in budget-rings.tsx and spending-limit.tsx, which
+      // treat 0 as "not configured" rather than "0 allowed to spend".
+      db.insert(schema.budgetCategories)
+        .values({ ...b, budget: 0, userId: DEMO_USER_ID })
+        .run()
+      console.log(`[bootstrap] Seeded budget bucket: ${b.category}`)
+    }
   }
 }
 

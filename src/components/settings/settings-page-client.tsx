@@ -317,9 +317,11 @@ function AppearanceTab() {
 
 export function SettingsPageClient({
   categories,
+  buckets,
   user,
 }: {
   categories: Category[]
+  buckets: string[]
   user: { name: string; email: string; avatar: string }
 }) {
   const searchParams = useSearchParams()
@@ -332,7 +334,7 @@ export function SettingsPageClient({
     profile: <ProfileTab user={user} />,
     security: <SecurityTab />,
     notifications: <NotificationsTab />,
-    categories: <CategoriesTab categories={categories} />,
+    categories: <CategoriesTab categories={categories} buckets={buckets} />,
     modules: <ModulesTab />,
     appearance: <AppearanceTab />,
   }

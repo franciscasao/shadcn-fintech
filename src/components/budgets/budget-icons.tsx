@@ -12,6 +12,16 @@ import {
   SparklesIcon,
   CheckSquareIcon,
   BanknoteIcon,
+  ScissorsIcon,
+  WashingMachineIcon,
+  ShoppingCartIcon,
+  StarIcon,
+  ShoppingBasketIcon,
+  TrainFrontIcon,
+  HandCoinsIcon,
+  ShieldIcon,
+  WifiIcon,
+  ZapIcon,
 } from "lucide-react"
 
 // Shared between BudgetRings (rendering) and AddBudget (icon picker) — kept
@@ -33,23 +43,23 @@ export const BUDGET_ICONS = [
   { name: "sparkles", label: "AI Tools" },
   { name: "check-square", label: "Productivity" },
   { name: "banknote", label: "Income" },
+  { name: "scissors", label: "Haircut" },
+  { name: "washing-machine", label: "Laundry" },
+  { name: "shopping-cart", label: "Grocery" },
+  { name: "star", label: "Wants" },
+  { name: "shopping-basket", label: "Needs" },
+  { name: "train-front", label: "Train" },
+  { name: "hand-coins", label: "Debt" },
+  { name: "shield", label: "Insurance" },
+  { name: "wifi", label: "Internet" },
+  { name: "zap", label: "Electricity" },
 ] as const
 
-// The 8 fixed analytics/budget buckets (see BudgetCategory / budget_categories
-// table) that a transaction category can roll up into. Reused by the
-// Categories settings tab's bucket picker (category-dialog.tsx) — kept as a
-// client-safe constant rather than fetched, since this set isn't itself
-// editable through that flow.
-export const BUDGET_BUCKET_NAMES = [
-  "Food & Dining",
-  "Transport",
-  "Entertainment",
-  "Shopping",
-  "Subscriptions",
-  "Health",
-  "Travel",
-  "Education",
-] as const
+// Budget bucket names used to live here as a hardcoded constant, but budgets
+// are now user-managed (renamable/deletable — see BudgetDialog /
+// DeleteBudgetDialog), so the Categories settings tab's bucket picker now
+// fetches live names via getBudgetBuckets() instead (see
+// src/components/settings/category-dialog.tsx).
 
 export const budgetIconMap: Record<string, React.ReactNode> = {
   utensils: <UtensilsIcon className="size-5" />,
@@ -65,4 +75,14 @@ export const budgetIconMap: Record<string, React.ReactNode> = {
   sparkles: <SparklesIcon className="size-5" />,
   "check-square": <CheckSquareIcon className="size-5" />,
   banknote: <BanknoteIcon className="size-5" />,
+  scissors: <ScissorsIcon className="size-5" />,
+  "washing-machine": <WashingMachineIcon className="size-5" />,
+  "shopping-cart": <ShoppingCartIcon className="size-5" />,
+  star: <StarIcon className="size-5" />,
+  "shopping-basket": <ShoppingBasketIcon className="size-5" />,
+  "train-front": <TrainFrontIcon className="size-5" />,
+  "hand-coins": <HandCoinsIcon className="size-5" />,
+  shield: <ShieldIcon className="size-5" />,
+  wifi: <WifiIcon className="size-5" />,
+  zap: <ZapIcon className="size-5" />,
 }

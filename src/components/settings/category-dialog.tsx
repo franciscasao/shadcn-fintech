@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { BUDGET_ICONS, BUDGET_BUCKET_NAMES, budgetIconMap } from "@/components/budgets/budget-icons"
+import { BUDGET_ICONS, budgetIconMap } from "@/components/budgets/budget-icons"
 import type { Category } from "@/lib/types"
 
 export type CategoryFormInput = {
@@ -36,6 +36,10 @@ export type CategoryDialogTarget = Category | "new" | null
 
 interface CategoryDialogProps {
   target: CategoryDialogTarget
+  /** Live budget bucket names (see getBudgetBuckets) — budgets are
+   * user-managed (renamable/deletable) now, so this must be fetched rather
+   * than a hardcoded list, or a renamed/deleted bucket would go stale here. */
+  buckets: string[]
   onOpenChange: (open: boolean) => void
   onCreate: (input: CategoryFormInput) => Promise<void>
   onUpdate: (id: string, input: CategoryFormInput) => Promise<void>
@@ -43,7 +47,7 @@ interface CategoryDialogProps {
 
 const NO_BUCKET = "none"
 
-export function CategoryDialog({ target, onOpenChange, onCreate, onUpdate }: CategoryDialogProps) {
+export function CategoryDialog({ target, buckets, onOpenChange, onCreate, onUpdate }: CategoryDialogProps) {
   const isEdit = target !== null && target !== "new"
 
   const [name, setName] = useState("")
@@ -124,7 +128,13 @@ export function CategoryDialog({ target, onOpenChange, onCreate, onUpdate }: Cat
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={NO_BUCKET}>None</SelectItem>
-                {BUDGET_BUCKET_NAMES.map((b) => (
+                {/* Defensive: include the currently-saved bucket even if it's
+                    since been renamed/deleted out from under this category,
+                    so the select never renders blank and stays savable. */}
+                {(bucket !== NO_BUCKET && !buckets.includes(bucket)
+                  ? [bucket, ...buckets]
+                  : buckets
+                ).map((b) => (
                   <SelectItem key={b} value={b}>
                     {b}
                   </SelectItem>
