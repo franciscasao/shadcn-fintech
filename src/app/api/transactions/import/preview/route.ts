@@ -1,7 +1,7 @@
 import { getCategories } from "@/server/queries/categories"
 import { getCards } from "@/server/queries/cards"
 import { parseStatement } from "@/server/import/statement"
-import { detectDuplicates, guessCategories, validateDraftRow } from "@/server/import/enrich"
+import { detectDuplicates, guessCategories } from "@/server/import/enrich"
 import type { PreviewResponse } from "@/lib/import/types"
 
 // Parses an uploaded MariBank e-Statement PDF (credit card or savings — see
@@ -90,9 +90,6 @@ export async function POST(request: Request): Promise<Response> {
 
   detectDuplicates(draftRows)
   guessCategories(draftRows, categoryNames)
-  for (const row of draftRows) {
-    row.issues = [...validateDraftRow(row), ...row.issues]
-  }
 
   const card = cardId != null ? cards.find((c) => c.id === String(cardId)) : undefined
   const notice =

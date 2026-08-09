@@ -18,6 +18,7 @@ import { ImportPreviewTable } from "@/components/transactions/import/import-prev
 import { ImportRail, type ImportStep } from "@/components/transactions/import/import-rail"
 import { ImportSummary, type RowFilter } from "@/components/transactions/import/import-summary"
 import { ImportReceipt } from "@/components/transactions/import/import-receipt"
+import { rowIssues } from "@/lib/import/validate"
 import type { BankAccount, CardData } from "@/lib/types"
 import type { DraftTransaction, ImportResult, ImportRow, PreviewResponse } from "@/lib/import/types"
 
@@ -150,7 +151,7 @@ export function ImportStatementPageClient({
 
   const includedRows = rows.filter((r) => r.include)
   const canImport =
-    includedRows.length > 0 && includedRows.every((r) => !r.issues.some((i) => i.level === "error"))
+    includedRows.length > 0 && includedRows.every((r) => !rowIssues(r).some((i) => i.level === "error"))
 
   async function handleImport() {
     if (!canImport || submitting) return

@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { EditableCell } from "@/components/transactions/import/editable-cell"
 import { matchesRowFilter, type RowFilter } from "@/components/transactions/import/import-summary"
+import { rowIssues } from "@/lib/import/validate"
 import type { DraftIssue, DraftTransaction } from "@/lib/import/types"
 
 const PAGE_SIZE = 25
@@ -106,7 +107,7 @@ export function ImportPreviewTable({ rows, onRowsChange, categoryNames, filter }
 
   const includedCount = rows.filter((r) => r.include).length
   const excludedDuplicates = rows.filter((r) => r.duplicateOf && !r.include).length
-  const needsAttention = rows.filter((r) => r.include && r.issues.some((i) => i.level === "error")).length
+  const needsAttention = rows.filter((r) => r.include && rowIssues(r).some((i) => i.level === "error")).length
 
   return (
     <TooltipProvider>
@@ -241,7 +242,7 @@ export function ImportPreviewTable({ rows, onRowsChange, categoryNames, filter }
                           </div>
                         </TableCell>
                         <TableCell className="p-1">
-                          <IssueBadge issues={row.issues} />
+                          <IssueBadge issues={rowIssues(row)} />
                         </TableCell>
                         <TableCell className="p-1">
                           <Button

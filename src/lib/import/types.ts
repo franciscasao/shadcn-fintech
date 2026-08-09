@@ -41,6 +41,12 @@ export type DraftTransaction = {
    * guessCategories() runs, `category` is what the UI reads. */
   categoryHint?: string
   include: boolean
+  /** Server-derived findings only (currently: duplicate-detection warnings
+   * from detectDuplicates) — things the client can't re-derive from the
+   * row's own fields. Structural validity (missing date/merchant/amount/
+   * category) is deliberately NOT stored here, since it would go stale the
+   * moment the user edits the row; read it live via rowIssues() from
+   * src/lib/import/validate.ts instead of this field directly. */
   issues: DraftIssue[]
   /** Set when this row looks like it already exists in the ledger — id of
    * the matching transaction and whether the match is exact or approximate

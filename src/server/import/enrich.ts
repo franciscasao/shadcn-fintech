@@ -4,7 +4,7 @@ import { and, eq, gte, lte, sql } from "drizzle-orm"
 import { DEMO_USER_ID, getDb } from "@/server/db"
 import { transactions } from "@/server/db/schema"
 import { dayOffset, merchantsLikelyMatch, normalizeMerchant } from "@/server/import/normalize"
-import type { DraftIssue, DraftTransaction } from "@/lib/import/types"
+import type { DraftTransaction } from "@/lib/import/types"
 
 // ---------------------------------------------------------------------------
 // DB-backed enrichment for the import preview: flags rows that look like
@@ -161,8 +161,8 @@ const KEYWORD_CATEGORIES: Array<{ pattern: RegExp; category: string }> = [
  * corresponds to a real category row — this applies to categoryHint too, so
  * a parser's hint is just another guess, never a bypass of that check. A
  * row that still ends up with no guess is left with an empty category —
- * that's reported once, as an error, by validateDraftRow below, rather than
- * also warning about it here. */
+ * that's reported as an error by validateDraftRow (src/lib/import/validate.ts),
+ * rather than also warning about it here. */
 export function guessCategories(rows: DraftTransaction[], validCategories: string[]): void {
   const validSet = new Set(validCategories)
   const history = loadMerchantCategoryHistory()
@@ -187,19 +187,4 @@ export function guessCategories(rows: DraftTransaction[], validCategories: strin
 
     if (guess && validSet.has(guess)) row.category = guess
   }
-}
-
-/** Structural validation independent of the enrichment heuristics above —
- * called last so its errors get prepended ahead of the duplicate/category
- * warnings already on the row (see the preview route handler). Mirrors the
- * field checks in POST /api/transactions/route.ts. */
-export function validateDraftRow(row: DraftTransaction): DraftIssue[] {
-  const issues: DraftIssue[] = []
-  if (!row.date) issues.push({ level: "error", message: "Date is missing or unrecognized" })
-  if (!row.merchant.trim()) issues.push({ level: "error", message: "Merchant is required" })
-  if (!Number.isFinite(row.amount) || row.amount <= 0) {
-    issues.push({ level: "error", message: "Amount must be a positive number" })
-  }
-  if (!row.category) issues.push({ level: "error", message: "Category is required" })
-  return issues
 }

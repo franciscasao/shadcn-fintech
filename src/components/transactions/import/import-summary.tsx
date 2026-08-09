@@ -6,6 +6,7 @@ import { ArrowUpDownIcon, CheckCircle2Icon, CircleAlertIcon, CopyIcon, InfoIcon,
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { rowIssues } from "@/lib/import/validate"
 import type { DraftTransaction } from "@/lib/import/types"
 
 // Replaces the old toolbar (a bare "Flip income/expense" button plus a
@@ -24,7 +25,7 @@ export function matchesRowFilter(row: DraftTransaction, filter: RowFilter): bool
     case "duplicates":
       return !!row.duplicateOf && !row.include
     case "issues":
-      return row.include && row.issues.some((i) => i.level === "error")
+      return row.include && rowIssues(row).some((i) => i.level === "error")
     case null:
     default:
       return true
@@ -91,7 +92,7 @@ export function ImportSummary({
   const included = rows.filter((r) => r.include)
   const needsCategoryCount = included.filter((r) => !r.category).length
   const duplicatesCount = rows.filter((r) => r.duplicateOf && !r.include).length
-  const issuesCount = included.filter((r) => r.issues.some((i) => i.level === "error")).length
+  const issuesCount = included.filter((r) => rowIssues(r).some((i) => i.level === "error")).length
 
   function toggle(next: RowFilter) {
     onFilterChange(filter === next ? null : next)
