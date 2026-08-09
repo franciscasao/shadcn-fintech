@@ -184,11 +184,45 @@ export function blockColumns(block: Line[], bounds: number[], epsilon: number): 
   return cols
 }
 
+/** pdfjs-dist's legacy Node build references `DOMMatrix`/`Path2D` at
+ * module-evaluation time (e.g. a top-level `new DOMMatrix()`), not just when
+ * actually rendering to a canvas — so importing it throws `ReferenceError`
+ * unless those globals exist, even though this module only ever calls
+ * `getTextContent()`. pdfjs normally sources these from its optional
+ * `@napi-rs/canvas` dependency, but that's a native, platform-specific
+ * package pulled in via a runtime-constructed `require()` that Next's
+ * output-file-tracing can't see through, so it silently doesn't make it into
+ * the standalone Docker build. Real canvas rendering is never exercised
+ * here, so a stub good enough not to throw is sufficient; skip it if a real
+ * implementation (e.g. `@napi-rs/canvas` present, as in local dev) is
+ * already on globalThis. */
+function ensurePdfjsNodeGlobals(): void {
+  if (typeof globalThis.DOMMatrix === "undefined") {
+    globalThis.DOMMatrix = class DOMMatrix {} as unknown as typeof DOMMatrix
+  }
+  if (typeof globalThis.Path2D === "undefined") {
+    globalThis.Path2D = class Path2D {} as unknown as typeof Path2D
+  }
+}
+
 /** Loads a PDF buffer and reconstructs each page into positioned lines.
  * `sawAnyText` is true when pdfjs extracted any text content at all — false
  * means a scanned/image PDF with no text layer (no OCR here), which every
  * parser should treat as an immediate failure rather than "wrong layout". */
 export async function loadPdfPages(data: Uint8Array): Promise<{ pages: PdfPage[]; sawAnyText: boolean }> {
+  ensurePdfjsNodeGlobals()
+  // pdfjs has no real Worker thread in Node, so it falls back to an in-process
+  // "fake worker" that by default dynamically imports a sibling
+  // legacy/build/pdf.worker.mjs by string path — another file Next's
+  // output-file-tracing misses (same root cause as the DOMMatrix issue
+  // above), which crashes with "Setting up fake worker failed: Cannot find
+  // module ... pdf.worker.mjs". Importing it here ourselves, as a normal
+  // static import Next's tracer *can* see, and exposing it the way pdfjs
+  // checks for a pre-loaded worker (`globalThis.pdfjsWorker`) skips that
+  // dynamic import entirely.
+  // @ts-expect-error - pdfjs-dist ships no type declarations for this subpath
+  const pdfjsWorker = await import("pdfjs-dist/legacy/build/pdf.worker.mjs")
+  ;(globalThis as { pdfjsWorker?: unknown }).pdfjsWorker = pdfjsWorker
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs")
   const loadingTask = pdfjs.getDocument({
     data,
