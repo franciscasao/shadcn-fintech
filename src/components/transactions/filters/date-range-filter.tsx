@@ -34,9 +34,6 @@ interface DateRangeFilterProps {
    * see the precedence comment on resolveDateBounds in the query module. */
   datePreset: DateRangePreset | undefined
   month: string | undefined
-  /** ISO "today" for the seeded ledger (LEDGER_ANCHOR) — the calendar
-   * defaults to it since real wall-clock time is outside the data's range. */
-  anchorDate: string
   onPresetChange: (preset: DateRangePreset) => void
   onCustomRangeChange: (from: string | undefined, to: string | undefined) => void
 }
@@ -46,7 +43,6 @@ export function DateRangeFilter({
   dateTo,
   datePreset,
   month,
-  anchorDate,
   onPresetChange,
   onCustomRangeChange,
 }: DateRangeFilterProps) {
@@ -90,7 +86,6 @@ export function DateRangeFilter({
     }
   }
 
-  const anchor = parseISO(anchorDate)
   const activePreset = !month && (dateFrom || dateTo) && !datePreset ? undefined : datePreset
 
   return (
@@ -121,7 +116,7 @@ export function DateRangeFilter({
           </div>
           <Calendar
             mode="range"
-            defaultMonth={range?.from ?? anchor}
+            defaultMonth={range?.from}
             selected={range}
             onSelect={handleCalendarSelect}
             numberOfMonths={2}

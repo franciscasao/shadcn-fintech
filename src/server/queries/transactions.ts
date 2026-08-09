@@ -24,7 +24,7 @@ import {
 import { DEMO_USER_ID, getDb } from "@/server/db"
 import { cards, transactions } from "@/server/db/schema"
 import { displayDate, toISODate } from "@/server/db/format"
-import { LEDGER_ANCHOR } from "@/server/db/generate"
+import { today } from "@/lib/today"
 import { getCategoryNamesForBucket } from "@/server/queries/categories"
 import type { FullTransaction, Transaction } from "@/lib/types"
 
@@ -133,9 +133,8 @@ function monthBounds(month: string): { start: string; end: string } {
 
 /** Resolves the three date inputs into one inclusive [dateFrom, dateTo] pair
  * — precedence is explicit from/to, then preset, then the legacy `month`
- * deep link. Presets are anchored on LEDGER_ANCHOR, NOT wall-clock time: the
- * seeded ledger's "today" is 2026-04-12 (real today is years later), so
- * "last 30 days" against Date.now() would silently match nothing. */
+ * deep link. Presets are anchored on today() (@/lib/today), i.e. the real
+ * wall-clock date. */
 function resolveDateBounds(args: {
   from?: string
   to?: string
@@ -147,7 +146,7 @@ function resolveDateBounds(args: {
   }
 
   if (args.preset && args.preset !== "all") {
-    const anchor = LEDGER_ANCHOR
+    const anchor = today()
     switch (args.preset) {
       case "7d":
         return { dateFrom: toISODate(subDays(anchor, 6)), dateTo: toISODate(anchor) }

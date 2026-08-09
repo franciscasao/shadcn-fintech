@@ -1,8 +1,6 @@
 import { getTransfers } from "@/server/queries/transfers"
 import { getContacts } from "@/server/queries/contacts"
 import { getAccounts } from "@/server/queries/accounts"
-import { LEDGER_ANCHOR } from "@/server/db/generate"
-import { toISODate } from "@/server/db/format"
 import { TransfersPageClient } from "@/components/transfers/transfers-page-client"
 
 // Reads live data from SQLite on every request — see (dashboard)/layout.tsx.
@@ -20,7 +18,6 @@ export default async function Page() {
         initialTransfers={transfers}
         contacts={contacts}
         accounts={accounts}
-        defaultDate={toISODate(LEDGER_ANCHOR)}
       />
     </div>
   )

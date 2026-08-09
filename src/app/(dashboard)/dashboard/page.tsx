@@ -3,8 +3,6 @@ import { getRecentTransactions } from "@/server/queries/transactions"
 import { getFinancialOverview, getMoneyMovement, getSpendingLimitSummary } from "@/server/queries/analytics"
 import { getAccounts } from "@/server/queries/accounts"
 import { getCards } from "@/server/queries/cards"
-import { LEDGER_ANCHOR } from "@/server/db/generate"
-import { toISODate } from "@/server/db/format"
 import { DashboardCustomizer, type DashboardData } from "@/components/dashboard/dashboard-customizer"
 
 // Reads live data from SQLite on every request — see (dashboard)/layout.tsx.
@@ -30,7 +28,6 @@ export default async function Page() {
     spendingLimit,
     accounts,
     cards,
-    defaultDate: toISODate(LEDGER_ANCHOR),
   }
 
   return <DashboardCustomizer data={data} />

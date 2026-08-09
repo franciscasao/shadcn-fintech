@@ -34,12 +34,10 @@ export function TransfersPageClient({
   initialTransfers,
   contacts,
   accounts,
-  defaultDate,
 }: {
   initialTransfers: TransferRecord[]
   contacts: Contact[]
   accounts: BankAccount[]
-  defaultDate: string
 }) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabKey>("all")
@@ -140,7 +138,6 @@ export function TransfersPageClient({
         open={internalOpen}
         onOpenChange={setInternalOpen}
         accounts={accounts}
-        defaultDate={defaultDate}
         onSubmit={handleInternalTransfer}
       />
     </div>

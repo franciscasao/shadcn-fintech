@@ -2,14 +2,14 @@ import { and, asc, eq, gte, lt, sql } from "drizzle-orm"
 
 import { DEMO_USER_ID, getDb } from "@/server/db"
 import { budgetCategories, savingsGoals, transactions } from "@/server/db/schema"
-import { LEDGER_ANCHOR } from "@/server/db/generate"
+import { today, todayISO } from "@/lib/today"
 import { toISODate } from "@/server/db/format"
 import { getBudgetBucketMap } from "@/server/queries/categories"
 import type { BudgetCategory, SavingsGoal } from "@/lib/types"
 
-function currentMonthBounds() {
-  const start = new Date(LEDGER_ANCHOR.getFullYear(), LEDGER_ANCHOR.getMonth(), 1)
-  const end = new Date(LEDGER_ANCHOR.getFullYear(), LEDGER_ANCHOR.getMonth() + 1, 1)
+function currentMonthBounds(now: Date) {
+  const start = new Date(now.getFullYear(), now.getMonth(), 1)
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1)
   return { start: toISODate(start), end: toISODate(end) }
 }
 
@@ -17,7 +17,7 @@ function currentMonthBounds() {
  * to BudgetRings so its "view transactions" links scope to the exact month
  * behind each ring's spent total (see TransactionFilters.month). */
 export function currentBudgetMonth(): string {
-  return toISODate(LEDGER_ANCHOR).slice(0, 7)
+  return todayISO().slice(0, 7)
 }
 
 /** Sum of expense amounts this calendar month, grouped by budget bucket
@@ -25,7 +25,7 @@ export function currentBudgetMonth(): string {
  * budgetBucket column — see src/server/queries/categories.ts). */
 async function getSpentByBucket(): Promise<Map<string, number>> {
   const db = getDb()
-  const { start, end } = currentMonthBounds()
+  const { start, end } = currentMonthBounds(today())
   const rows = db
     .select({
       category: transactions.category,

@@ -8,8 +8,6 @@ import {
 import { getCategories } from "@/server/queries/categories"
 import { getAccounts } from "@/server/queries/accounts"
 import { getCards } from "@/server/queries/cards"
-import { LEDGER_ANCHOR } from "@/server/db/generate"
-import { toISODate } from "@/server/db/format"
 import { TransactionsPageClient } from "@/components/transactions/transactions-page-client"
 
 // Reads live data from SQLite on every request — see (dashboard)/layout.tsx.
@@ -45,7 +43,6 @@ export default async function Page({
         categoryMeta={categoryMeta}
         accounts={accounts}
         cards={cards}
-        defaultDate={toISODate(LEDGER_ANCHOR)}
         filters={filters}
         sort={sort}
       />

@@ -72,7 +72,6 @@ export function TransactionsPageClient({
   categoryMeta,
   accounts,
   cards,
-  defaultDate,
   filters,
   sort,
 }: {
@@ -82,7 +81,6 @@ export function TransactionsPageClient({
   categoryMeta: Record<string, { iconName: string; color: string }>
   accounts: BankAccount[]
   cards: CardData[]
-  defaultDate: string
   filters: TransactionFilters
   sort: TransactionSort | undefined
 }) {
@@ -340,7 +338,6 @@ export function TransactionsPageClient({
         dateTo={filters.dateTo}
         datePreset={filters.datePreset}
         month={filters.month}
-        anchorDate={defaultDate}
         onPresetChange={(preset) =>
           setParams({ range: preset, from: undefined, to: undefined, month: undefined })
         }
@@ -411,7 +408,6 @@ export function TransactionsPageClient({
         categories={categoryNames}
         accounts={accounts}
         cards={cards}
-        defaultDate={defaultDate}
         onAdd={handleAddTransaction}
       />
 

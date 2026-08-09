@@ -12,6 +12,7 @@ import {
 import { getNotifications } from "@/server/queries/notifications"
 import { getContacts } from "@/server/queries/contacts"
 import { getRecentTransactions } from "@/server/queries/transactions"
+import { getCurrentUser } from "@/server/queries/user"
 
 // Every page under this layout reads live data from SQLite via better-sqlite3,
 // which Next.js can't detect as "dynamic" the way it does fetch() — without
@@ -25,15 +26,16 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const [notifications, contacts, recentTransactions] = await Promise.all([
+  const [notifications, contacts, recentTransactions, user] = await Promise.all([
     getNotifications(),
     getContacts(),
     getRecentTransactions(),
+    getCurrentUser(),
   ])
 
   return (
     <SidebarProvider>
-      <AppSidebar notifications={notifications} />
+      <AppSidebar notifications={notifications} user={user} />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2">
           <div className="flex items-center gap-2 px-4">

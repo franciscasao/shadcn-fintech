@@ -18,22 +18,16 @@ import {
   ArrowLeftRightIcon,
   CreditCardIcon,
   SendIcon,
-  TrendingUpIcon,
-  BitcoinIcon,
   ChartAreaIcon,
   TargetIcon,
   SettingsIcon,
   BellIcon,
-  LogInIcon,
-  UserPlusIcon,
-  LifeBuoyIcon,
   SearchIcon,
   MoonIcon,
   SunIcon,
   MonitorIcon,
 } from "lucide-react"
 import { useTheme } from "next-themes"
-import { cryptoCoins } from "@/data/seed"
 import { moduleIdForHref } from "@/lib/modules"
 import { useDisabledModules } from "@/hooks/use-disabled-modules"
 import type { Contact, Transaction } from "@/lib/types"
@@ -92,15 +86,10 @@ export function CommandPalette({
               { label: "Transactions", icon: ArrowLeftRightIcon, href: "/transactions" },
               { label: "Transfers", icon: SendIcon, href: "/transfers" },
               { label: "Cards", icon: CreditCardIcon, href: "/cards" },
-              { label: "Crypto", icon: BitcoinIcon, href: "/crypto" },
               { label: "Analytics", icon: ChartAreaIcon, href: "/analytics" },
-              { label: "Investments", icon: TrendingUpIcon, href: "/investments" },
               { label: "Budgets", icon: TargetIcon, href: "/budgets" },
               { label: "Settings", icon: SettingsIcon, href: "/settings" },
               { label: "Notifications", icon: BellIcon, href: "/notifications" },
-              { label: "Help & Support", icon: LifeBuoyIcon, href: "/support" },
-              { label: "Sign In", icon: LogInIcon, href: "/sign-in" },
-              { label: "Sign Up", icon: UserPlusIcon, href: "/sign-up" },
             ].filter((page) => isModuleEnabled(page.href)).map((page) => (
               <CommandItem key={page.href} onSelect={() => run(() => router.push(page.href))}>
                 <page.icon className="mr-2 size-4" />
@@ -131,23 +120,6 @@ export function CommandPalette({
                   <CommandItem key={c.id} onSelect={() => run(() => router.push("/transfers"))}>
                     <SendIcon className="mr-2 size-4" />
                     Send to {c.name}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </>
-          )}
-
-          {isModuleEnabled("/crypto") && (
-            <>
-              <CommandSeparator />
-              <CommandGroup heading="Crypto">
-                {cryptoCoins.slice(0, 4).map((coin) => (
-                  <CommandItem key={coin.id} onSelect={() => run(() => router.push("/crypto"))}>
-                    <BitcoinIcon className="mr-2 size-4" />
-                    {coin.name}
-                    <span className="ml-auto text-xs tabular-nums text-muted-foreground">
-                      ₱{coin.price.toLocaleString()}
-                    </span>
                   </CommandItem>
                 ))}
               </CommandGroup>

@@ -3,10 +3,13 @@
 import { motion } from "motion/react"
 import {
   Card,
+  CardAction,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { aiInsights } from "@/data/seed"
 import { cn } from "@/lib/utils"
 import {
@@ -51,6 +54,10 @@ export function AiInsights() {
           <SparklesIcon className="size-4 text-primary" />
           AI Insights
         </CardTitle>
+        <CardDescription>Sample insights — not generated from your data.</CardDescription>
+        <CardAction>
+          <Badge variant="outline">Preview</Badge>
+        </CardAction>
       </CardHeader>
       <CardContent>
         <motion.div

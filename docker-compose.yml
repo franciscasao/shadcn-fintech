@@ -2,17 +2,27 @@ services:
   web:
     build: .
     ports:
-      - "3000:3000"
+      # Bound to loopback only — there is no app-level auth (see the
+      # README's Deployment section), so this must never be reachable
+      # directly from the network. Put a real access layer in front
+      # (Tailscale `tailscale serve`, Cloudflare Access, an SSH tunnel...)
+      # rather than widening this to "3000:3000".
+      - "127.0.0.1:3000:3000"
     environment:
       DATABASE_URL: file:./data/app.db
+      # See the Dockerfile's TZ comment — this drives every "this month" /
+      # "last 30 days" / credit-card due-date window in the app. Change to
+      # your own timezone if you're not in the Philippines.
+      TZ: Asia/Manila
     volumes:
-      # Named volume, not a bind mount: Docker seeds it from the image's
-      # /app/data (the demo DB baked in at build time) on first creation,
-      # then persists whatever changes you make in the UI across restarts.
-      # `docker compose down -v` wipes it, so the next `up` starts from the
-      # freshly-seeded demo data again.
-      - sqlite-data:/app/data
+      # Bind mount, not a named volume: this is real financial data, and it
+      # needs to be reachable from the host for backups (see
+      # scripts/backup.ts) without going through `docker cp` or a helper
+      # container. It also means `docker compose down -v` can't destroy it
+      # by accident — there's no volume for `-v` to remove.
+      #
+      # The container runs as uid/gid 1001 (see the Dockerfile); on first
+      # run, `chown -R 1001:1001 ./data` on the host so the container can
+      # write to it, or the app will fail to start with SQLITE_CANTOPEN.
+      - ./data:/app/data
     restart: unless-stopped
-
-volumes:
-  sqlite-data:

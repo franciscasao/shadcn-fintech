@@ -3,8 +3,8 @@ import { and, eq } from "drizzle-orm"
 import { DEMO_USER_ID, getDb } from "@/server/db"
 import { accounts, categories, contacts, transactions, transfers } from "@/server/db/schema"
 import { getPrimaryAccountId } from "@/server/queries/accounts"
-import { LEDGER_ANCHOR } from "@/server/db/generate"
-import { displayDate, toISODate } from "@/server/db/format"
+import { todayISO } from "@/lib/today"
+import { displayDate } from "@/server/db/format"
 import { ICON_COLORS } from "@/server/icon-colors"
 import { generateTransactionId } from "@/server/mutations/transactions"
 import type { TransferRecord } from "@/lib/types"
@@ -26,7 +26,7 @@ export async function createTransfer(input: NewTransferInput): Promise<TransferR
   if (!contact) throw new TransferNotFoundError(`Contact ${input.contactId} not found`)
 
   const accountId = await getPrimaryAccountId()
-  const date = toISODate(LEDGER_ANCHOR)
+  const date = todayISO()
 
   // Insert the transfer and debit the sending account atomically.
   const row = db.transaction((tx) => {

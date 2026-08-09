@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { todayISO } from "@/lib/today"
 import {
   Dialog,
   DialogContent,
@@ -30,9 +31,6 @@ interface AddTransactionDialogProps {
   categories: string[]
   accounts: BankAccount[]
   cards: CardData[]
-  /** ISO yyyy-MM-dd the date field defaults to — the ledger's "today"
-   * (LEDGER_ANCHOR), not the real calendar date; see @/server/db/generate. */
-  defaultDate: string
   onAdd: (input: NewTransactionInput) => Promise<void>
 }
 
@@ -65,14 +63,13 @@ export function AddTransactionDialog({
   categories,
   accounts,
   cards,
-  defaultDate,
   onAdd,
 }: AddTransactionDialogProps) {
   const [merchant, setMerchant] = useState("")
   const [amount, setAmount] = useState("")
   const [type, setType] = useState<TxType>("expense")
   const [category, setCategory] = useState("")
-  const [date, setDate] = useState(defaultDate)
+  const [date, setDate] = useState(todayISO)
   const [accountId, setAccountId] = useState("")
   const [cardId, setCardId] = useState(NO_CARD)
   const [status, setStatus] = useState<Status>("completed")
@@ -101,7 +98,7 @@ export function AddTransactionDialog({
       setAmount("")
       setType("expense")
       setCategory("")
-      setDate(defaultDate)
+      setDate(todayISO())
       setAccountId("")
       setCardId(NO_CARD)
       setStatus("completed")

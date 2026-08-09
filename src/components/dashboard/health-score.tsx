@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   CardAction,
@@ -265,7 +266,9 @@ export function HealthScore() {
           <HeartPulseIcon className="size-4 text-primary" />
           Financial Health
         </CardTitle>
-        <CardAction>
+        <CardDescription>Illustrative score — not yet derived from your ledger.</CardDescription>
+        <CardAction className="flex items-center gap-1.5">
+          <Badge variant="outline">Preview</Badge>
           <div
             className={cn(
               "flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",

@@ -28,11 +28,7 @@ import {
   SelectItem,
 } from "@/components/ui/select"
 import { InstitutionPicker } from "@/components/accounts/institution-picker"
-import {
-  RATES_AS_OF,
-  type InstitutionTemplate,
-  type NewAccountInput,
-} from "@/lib/ph-institutions"
+import { type InstitutionTemplate, type NewAccountInput } from "@/lib/ph-institutions"
 import type { BankAccount, CreditingFrequency, CreditingTiming } from "@/lib/types"
 
 interface AddAccountDialogProps {
@@ -410,8 +406,7 @@ export function AddAccountDialog({ open, onOpenChange, onAdd }: AddAccountDialog
                 )}
                 {selection?.kind === "template" && selection.template.interestRate != null && (
                   <p className="mt-1 text-xs text-muted-foreground/70">
-                    Prefilled from published rates as of {RATES_AS_OF} — edit to match your
-                    account.
+                    Prefilled from published headline rates — edit to match your actual account.
                   </p>
                 )}
               </div>

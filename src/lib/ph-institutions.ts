@@ -6,13 +6,14 @@
 // pulling either the React tree or better-sqlite3 into the wrong bundle.
 //
 // Rates, maintaining balances, and fees are published headline figures for
-// illustration — they are prefilled defaults a user can edit, not live data.
+// illustration — they are prefilled defaults a user can edit, not live data,
+// and this file isn't kept in sync with real rate changes. Don't display a
+// specific "as of" date next to them (it can only ever be wrong); say they're
+// prefilled and editable instead — see the note in add-account-dialog.tsx.
 // ---------------------------------------------------------------------------
 
 import { logo } from "@/lib/media"
 import type { BankAccount, CreditingFrequency, CreditingTiming, InstitutionKind } from "@/lib/types"
-
-export const RATES_AS_OF = "August 2026"
 
 export type { CreditingFrequency, CreditingTiming, InstitutionKind }
 

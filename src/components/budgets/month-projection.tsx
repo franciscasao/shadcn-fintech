@@ -12,6 +12,7 @@ import { Area, AreaChart, ReferenceLine, XAxis, YAxis } from "recharts"
 import type { BudgetCategory, DailySpending } from "@/lib/types"
 import { AlertTriangleIcon, CheckCircle2Icon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { today } from "@/lib/today"
 
 const chartConfig = {
   cumulative: {
@@ -29,17 +30,27 @@ export function MonthProjection({
 }) {
   const stats = useMemo(() => {
     const totalBudget = budgetCategories.reduce((s, b) => s + b.budget, 0)
-    const spentDays = dailySpending.filter((d) => d.amount > 0)
-    const totalSpent = spentDays.reduce((s, d) => s + d.amount, 0)
-    const avgDaily = spentDays.length > 0 ? totalSpent / spentDays.length : 0
-    const daysLeft = 30 - spentDays.length
+    // dailySpending covers every day of the current calendar month, in order
+    // (index 0 = day 1) — see getDailySpending in @/server/queries/analytics.
+    // "Elapsed" days are days up to and including today; anything after that
+    // hasn't happened yet, so it shouldn't count toward the average.
+    const daysInMonth = dailySpending.length
+    const daysElapsed = Math.min(today().getDate(), daysInMonth)
+    const elapsedDays = dailySpending.slice(0, daysElapsed)
+    const totalSpent = elapsedDays.reduce((s, d) => s + d.amount, 0)
+    const avgDaily = daysElapsed > 0 ? totalSpent / daysElapsed : 0
+    const daysLeft = Math.max(daysInMonth - daysElapsed, 0)
     const projected = totalSpent + avgDaily * daysLeft
     const overBudget = projected > totalBudget
 
     // Build cumulative chart data
     const chartData = dailySpending.reduce<{ day: number; cumulative: number; budget: number }[]>((acc, d, i) => {
       const prevCumulative = i > 0 ? acc[i - 1].cumulative : 0
-      acc.push({ day: i + 1, cumulative: prevCumulative + d.amount, budget: (totalBudget / 30) * (i + 1) })
+      acc.push({
+        day: i + 1,
+        cumulative: prevCumulative + d.amount,
+        budget: daysInMonth > 0 ? (totalBudget / daysInMonth) * (i + 1) : 0,
+      })
       return acc
     }, [])
 

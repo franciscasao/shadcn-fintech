@@ -27,6 +27,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { PreviewBanner } from "@/components/preview-banner"
 import {
   faqItems,
   supportTickets,
@@ -742,6 +743,10 @@ export function SupportPageClient() {
         <h1 className="text-2xl font-semibold tracking-tight">Help & Support</h1>
         <p className="text-sm text-muted-foreground">Find answers, chat with us, submit tickets, and check system status</p>
       </div>
+
+      <PreviewBanner>
+        Coming soon — the FAQ, tickets, and status board here are all sample data.
+      </PreviewBanner>
 
       <div className="flex flex-1 flex-col gap-6 lg:flex-row">
         {/* Sidebar */}

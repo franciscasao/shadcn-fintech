@@ -2,7 +2,7 @@ import { and, eq, gte, inArray, lt, sql } from "drizzle-orm"
 
 import { DEMO_USER_ID, getDb } from "@/server/db"
 import { accounts, cardPayments, cards, transactions } from "@/server/db/schema"
-import { LEDGER_ANCHOR } from "@/server/db/generate"
+import { today } from "@/lib/today"
 import { toISODate } from "@/server/db/format"
 import { DEFAULT_CREDIT_TERMS } from "@/lib/ph-cards"
 import {
@@ -16,9 +16,9 @@ import {
 } from "@/lib/credit"
 import type { CardData, CreditSummary } from "@/lib/types"
 
-function currentMonthBounds() {
-  const start = new Date(LEDGER_ANCHOR.getFullYear(), LEDGER_ANCHOR.getMonth(), 1)
-  const end = new Date(LEDGER_ANCHOR.getFullYear(), LEDGER_ANCHOR.getMonth() + 1, 1)
+function currentMonthBounds(now: Date) {
+  const start = new Date(now.getFullYear(), now.getMonth(), 1)
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1)
   return { start: toISODate(start), end: toISODate(end) }
 }
 
@@ -60,7 +60,8 @@ export function toCardData(
 function buildCreditSummary(
   card: typeof cards.$inferSelect,
   ledger: { date: string; amount: number }[],
-  payments: { date: string; amount: number }[]
+  payments: { date: string; amount: number }[],
+  now: Date
 ): CreditSummary {
   const statementDay = card.statementDay ?? DEFAULT_CREDIT_TERMS.statementDay
   const dueDay = card.dueDay ?? DEFAULT_CREDIT_TERMS.dueDay
@@ -73,9 +74,9 @@ function buildCreditSummary(
     -ledger.reduce((sum, r) => sum + r.amount, 0) - payments.reduce((sum, r) => sum + r.amount, 0)
   const balanceOwed = Math.max(Math.round(owedTotal * 100) / 100, 0)
 
-  const closeDate = lastStatementClose(statementDay, LEDGER_ANCHOR)
+  const closeDate = lastStatementClose(statementDay, now)
   const closeISO = toISODate(closeDate)
-  const dueDate = nextDueDate(statementDay, dueDay, LEDGER_ANCHOR)
+  const dueDate = nextDueDate(statementDay, dueDay, now)
 
   const statementOwed =
     -ledger.filter((r) => r.date <= closeISO).reduce((sum, r) => sum + r.amount, 0) -
@@ -83,7 +84,7 @@ function buildCreditSummary(
   const statementBalance = Math.max(Math.round(statementOwed * 100) / 100, 0)
 
   const minDue = minimumDue(statementBalance)
-  const daysUntilDue = daysUntil(dueDate, LEDGER_ANCHOR)
+  const daysUntilDue = daysUntil(dueDate, now)
 
   return {
     balanceOwed,
@@ -100,6 +101,7 @@ function buildCreditSummary(
 
 export async function getCards(): Promise<CardData[]> {
   const db = getDb()
+  const now = today()
   const rows = db
     .select({ card: cards, accountName: accounts.name })
     .from(cards)
@@ -107,7 +109,7 @@ export async function getCards(): Promise<CardData[]> {
     .where(eq(cards.userId, DEMO_USER_ID))
     .all()
 
-  const { start, end } = currentMonthBounds()
+  const { start, end } = currentMonthBounds(now)
   const spendRows = db
     .select({
       cardId: transactions.cardId,
@@ -171,7 +173,7 @@ export async function getCards(): Promise<CardData[]> {
   return rows.map(({ card, accountName }) => {
     const credit =
       card.product === "credit"
-        ? buildCreditSummary(card, ledgerByCard.get(card.id) ?? [], paymentsByCard.get(card.id) ?? [])
+        ? buildCreditSummary(card, ledgerByCard.get(card.id) ?? [], paymentsByCard.get(card.id) ?? [], now)
         : null
 
     return toCardData(card, {
@@ -216,5 +218,5 @@ export async function getCreditSummaryForCard(
     )
     .all()
 
-  return buildCreditSummary(card, ledger, payments)
+  return buildCreditSummary(card, ledger, payments, today())
 }

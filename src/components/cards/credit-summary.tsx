@@ -23,7 +23,6 @@ interface CreditSummaryPanelProps {
   credit: CreditSummary
   accounts: BankAccount[]
   payments: CardPayment[]
-  defaultDate: string
   onPay: (input: {
     fromAccountId: string
     amount: number
@@ -55,7 +54,6 @@ export function CreditSummaryPanel({
   credit,
   accounts,
   payments,
-  defaultDate,
   onPay,
   onDeletePayment,
 }: CreditSummaryPanelProps) {
@@ -166,7 +164,6 @@ export function CreditSummaryPanel({
         card={card}
         credit={credit}
         accounts={accounts}
-        defaultDate={defaultDate}
         onPay={onPay}
       />
     </Card>

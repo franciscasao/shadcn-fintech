@@ -6,9 +6,8 @@
 // the DB seed can all import it without pulling in better-sqlite3.
 //
 // Everything here takes `today` as an explicit argument rather than reading
-// Date.now() — the app's ledger "today" is LEDGER_ANCHOR
-// (@/server/db/generate), a fixed date in the seeded data's future, not the
-// wall clock.
+// Date.now() directly, so callers can pass a single shared "now" (see
+// @/lib/today) instead of every function computing it independently.
 // ---------------------------------------------------------------------------
 
 export const MIN_PAYMENT_RULE = { percent: 0.05, floor: 500 }

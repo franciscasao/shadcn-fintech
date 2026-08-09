@@ -4,25 +4,29 @@ import { useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { DailySpending } from "@/lib/types"
 import { cn } from "@/lib/utils"
+import { today, todayISO } from "@/lib/today"
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+const MONTH_TITLE = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" })
 
 export function SpendingCalendar({ dailySpending }: { dailySpending: DailySpending[] }) {
-  const { weeks, maxAmount } = useMemo(() => {
+  const { weeks, maxAmount, title, todayIso } = useMemo(() => {
     const map = new Map(dailySpending.map((d) => [d.date, d.amount]))
-    // Build April 2026 calendar
-    const firstDay = new Date(2026, 3, 1) // April 1
+    // dailySpending covers the current calendar month, day 1 through the
+    // last day — see getDailySpending in @/server/queries/analytics.
+    const now = today()
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1)
     const startPad = firstDay.getDay() // day of week offset
-    const daysInMonth = 30
+    const daysInMonth = dailySpending.length
     const cells: { day: number | null; amount: number; date: string }[] = []
 
     for (let i = 0; i < startPad; i++) cells.push({ day: null, amount: 0, date: "" })
     let max = 0
     for (let d = 1; d <= daysInMonth; d++) {
-      const dateStr = `2026-04-${String(d).padStart(2, "0")}`
-      const amount = map.get(dateStr) ?? 0
+      const date = dailySpending[d - 1]?.date ?? ""
+      const amount = map.get(date) ?? 0
       if (amount > max) max = amount
-      cells.push({ day: d, amount, date: dateStr })
+      cells.push({ day: d, amount, date })
     }
 
     const weeks: typeof cells[] = []
@@ -31,16 +35,16 @@ export function SpendingCalendar({ dailySpending }: { dailySpending: DailySpendi
     }
     // Pad last week
     const last = weeks[weeks.length - 1]
-    while (last.length < 7) last.push({ day: null, amount: 0, date: "" })
+    if (last) while (last.length < 7) last.push({ day: null, amount: 0, date: "" })
 
-    return { weeks, maxAmount: max }
+    return { weeks, maxAmount: max, title: MONTH_TITLE.format(firstDay), todayIso: todayISO() }
   }, [dailySpending])
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base font-semibold">
-          April 2026 Spending
+          {title} Spending
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -64,7 +68,7 @@ export function SpendingCalendar({ dailySpending }: { dailySpending: DailySpendi
                   cell.amount === 0
                     ? 0
                     : Math.min(Math.round((cell.amount / maxAmount) * 4), 4)
-                const isToday = cell.day === 12 // April 12 — the ledger's anchor "today"
+                const isToday = cell.date === todayIso
                 return (
                   <div
                     key={ci}

@@ -46,14 +46,13 @@ export type DashboardData = {
   recentTransactions: Transaction[]
   accounts: BankAccount[]
   cards: CardData[]
-  defaultDate: string
 }
 
 function buildDefaultBlocks(data: DashboardData): Block[] {
   return [
     { id: "financial-overview", label: "Financial Overview", size: "lg", component: <FinancialOverview financialOverview={data.financialOverview} /> },
     { id: "account-cards", label: "Account Cards", size: "sm", component: <AccountCards accounts={data.accounts} /> },
-    { id: "transfer-spending", label: "Transfer & Spending", size: "sm", component: <div className="flex flex-col gap-4 [&>*]:flex-1"><QuickTransfer contacts={data.contacts} accounts={data.accounts} defaultDate={data.defaultDate} /><SpendingLimit spendingLimit={data.spendingLimit} /></div> },
+    { id: "transfer-spending", label: "Transfer & Spending", size: "sm", component: <div className="flex flex-col gap-4 [&>*]:flex-1"><QuickTransfer contacts={data.contacts} accounts={data.accounts} /><SpendingLimit spendingLimit={data.spendingLimit} /></div> },
     { id: "money-movement", label: "Money Movement", size: "sm", component: <MoneyMovement moneyMovementByPeriod={data.moneyMovementByPeriod} /> },
     { id: "health-score", label: "Financial Health", size: "sm", component: <HealthScore /> },
     { id: "card-payments-due", label: "Card Payments Due", size: "sm", component: <CardPaymentsDue cards={data.cards} /> },

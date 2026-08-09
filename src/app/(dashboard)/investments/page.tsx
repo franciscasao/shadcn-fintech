@@ -3,6 +3,7 @@ import { PortfolioAllocation } from "@/components/investments/portfolio-allocati
 import { PerformanceChart } from "@/components/investments/performance-chart"
 import { HoldingsTable } from "@/components/investments/holdings-table"
 import { Watchlist } from "@/components/investments/watchlist"
+import { PreviewBanner } from "@/components/preview-banner"
 
 export default function Page() {
   return (
@@ -11,6 +12,10 @@ export default function Page() {
       <LiveTicker />
 
       <div className="flex flex-1 flex-col gap-4 p-4">
+        <PreviewBanner>
+          Coming soon — everything on this page is sample data, not your real portfolio.
+        </PreviewBanner>
+
         {/* Row 1: Allocation + Performance */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           <div className="lg:col-span-4">

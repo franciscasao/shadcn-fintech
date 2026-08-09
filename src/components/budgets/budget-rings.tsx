@@ -45,7 +45,10 @@ export function BudgetRings({
           {budgetCategories.map((b, i) => {
             const percent = b.budget > 0 ? Math.min((b.spent / b.budget) * 100, 100) : 0
             const offset = CIRCUMFERENCE - (percent / 100) * CIRCUMFERENCE
-            const isOver = b.spent > b.budget
+            // No "over budget" reading until a budget is actually set —
+            // otherwise every bucket flags red the moment any transaction
+            // lands on a freshly bootstrapped (budget: 0) account.
+            const isOver = b.budget > 0 && b.spent > b.budget
             const href = `/transactions?${new URLSearchParams({
               bucket: b.category,
               month,
@@ -118,7 +121,7 @@ export function BudgetRings({
                   <p className="text-xs tabular-nums text-muted-foreground">
                     ₱{b.spent.toLocaleString()}{" "}
                     <span className="text-muted-foreground/60">
-                      / ₱{b.budget.toLocaleString()}
+                      {b.budget > 0 ? `/ ₱${b.budget.toLocaleString()}` : "· not set"}
                     </span>
                   </p>
                 </div>

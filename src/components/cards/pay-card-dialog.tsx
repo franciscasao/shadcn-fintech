@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { todayISO } from "@/lib/today"
 import type { BankAccount, CardData, CreditSummary } from "@/lib/types"
 
 interface PayCardDialogProps {
@@ -27,9 +28,6 @@ interface PayCardDialogProps {
   card: CardData
   credit: CreditSummary
   accounts: BankAccount[]
-  /** ISO yyyy-MM-dd the date field defaults to — the ledger's "today"
-   * (LEDGER_ANCHOR), not the real calendar date; see @/server/db/generate. */
-  defaultDate: string
   onPay: (input: {
     fromAccountId: string
     amount: number
@@ -56,12 +54,11 @@ export function PayCardDialog({
   card,
   credit,
   accounts,
-  defaultDate,
   onPay,
 }: PayCardDialogProps) {
   const [fromAccountId, setFromAccountId] = useState("")
   const [amount, setAmount] = useState("")
-  const [date, setDate] = useState(defaultDate)
+  const [date, setDate] = useState(todayISO)
   const [note, setNote] = useState("")
 
   const [submitting, setSubmitting] = useState(false)
@@ -71,7 +68,7 @@ export function PayCardDialog({
     if (!open) {
       setFromAccountId("")
       setAmount("")
-      setDate(defaultDate)
+      setDate(todayISO())
       setNote("")
       setError(null)
     } else {

@@ -7,6 +7,7 @@ import { MyPortfolio } from "@/components/crypto/my-portfolio"
 import { CoinInsight } from "@/components/crypto/coin-insight"
 import { TradeForm } from "@/components/crypto/trade-form"
 import { MarketOverview } from "@/components/crypto/market-overview"
+import { PreviewBanner } from "@/components/preview-banner"
 import { cryptoCoins } from "@/data/seed"
 
 export type CryptoPrices = Record<string, number>
@@ -50,6 +51,12 @@ export function CryptoPageClient() {
 
   return (
     <div className="grid gap-4 px-4 pb-6 lg:grid-cols-12">
+      <div className="lg:col-span-12">
+        <PreviewBanner>
+          Coming soon — everything on this page is sample data, not your real holdings.
+        </PreviewBanner>
+      </div>
+
       {/* Row 1 */}
       <MyBalance prices={prices} />
       <TopCoins

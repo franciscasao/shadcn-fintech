@@ -22,48 +22,34 @@ import {
   ChartAreaIcon,
   TargetIcon,
   SettingsIcon,
-  LifeBuoyIcon,
   LandmarkIcon,
   SendIcon,
-  TrendingUpIcon,
-  BitcoinIcon,
   BellIcon,
-  LogInIcon,
-  UserPlusIcon,
 } from "lucide-react"
 import type { Notification } from "@/lib/types"
 import { moduleIdForHref } from "@/lib/modules"
 import { useDisabledModules } from "@/hooks/use-disabled-modules"
 
+// Crypto, Investments, and Help & Support are still fully working routes
+// (see @/lib/modules — they're deliberately left routable, not disabled)
+// but are sample-data-only for now, so they're left off the nav entirely
+// rather than advertised alongside the real, DB-backed pages below. Same
+// for /sign-in and /sign-up, which have never been backed by real auth.
 const data = {
-  user: {
-    name: "Abderrahim G.",
-    email: "abderrahim@fintech.com",
-    avatar: "/avatars/user.jpg",
-  },
   navDaily: [
     { title: "Overview", url: "/dashboard", icon: <LayoutDashboardIcon /> },
     { title: "Accounts", url: "/accounts", icon: <WalletIcon /> },
     { title: "Transactions", url: "/transactions", icon: <ArrowLeftRightIcon /> },
     { title: "Cards", url: "/cards", icon: <CreditCardIcon /> },
-  ],
-  navMoney: [
     { title: "Transfers", url: "/transfers", icon: <SendIcon /> },
-    { title: "Investments", url: "/investments", icon: <TrendingUpIcon /> },
-    { title: "Crypto", url: "/crypto", icon: <BitcoinIcon /> },
   ],
   navInsights: [
     { title: "Analytics", url: "/analytics", icon: <ChartAreaIcon /> },
     { title: "Budgets", url: "/budgets", icon: <TargetIcon /> },
   ],
-  navAuth: [
-    { title: "Sign In", url: "/sign-in", icon: <LogInIcon /> },
-    { title: "Sign Up", url: "/sign-up", icon: <UserPlusIcon /> },
-  ],
   navSecondary: [
     { title: "Notifications", url: "/notifications", icon: <BellIcon /> },
     { title: "Settings", url: "/settings", icon: <SettingsIcon /> },
-    { title: "Help & Support", url: "/support", icon: <LifeBuoyIcon /> },
   ],
 }
 
@@ -79,12 +65,15 @@ function filterByEnabledModules<T extends { url: string }>(
 
 export function AppSidebar({
   notifications,
+  user,
   ...props
-}: { notifications: Notification[] } & React.ComponentProps<typeof Sidebar>) {
+}: {
+  notifications: Notification[]
+  user: { name: string; email: string; avatar: string }
+} & React.ComponentProps<typeof Sidebar>) {
   const { disabled } = useDisabledModules()
 
   const navDaily = filterByEnabledModules(data.navDaily, disabled)
-  const navMoney = filterByEnabledModules(data.navMoney, disabled)
   const navInsights = filterByEnabledModules(data.navInsights, disabled)
   const navSecondary = filterByEnabledModules(data.navSecondary, disabled)
 
@@ -109,13 +98,11 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         {navDaily.length > 0 && <NavMain items={navDaily} label="Daily" />}
-        {navMoney.length > 0 && <NavMain items={navMoney} label="Money" />}
         {navInsights.length > 0 && <NavMain items={navInsights} label="Insights" />}
-        <NavMain items={data.navAuth} label="Auth" />
         <NavSecondary items={navSecondary} notifications={notifications} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
   )

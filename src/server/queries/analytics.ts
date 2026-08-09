@@ -3,7 +3,7 @@ import { addDays, format, subDays, subMonths } from "date-fns"
 
 import { DEMO_USER_ID, getDb } from "@/server/db"
 import { budgetCategories, transactions } from "@/server/db/schema"
-import { LEDGER_ANCHOR } from "@/server/db/generate"
+import { today } from "@/lib/today"
 import { toISODate } from "@/server/db/format"
 import { getBudgetBuckets } from "@/server/queries/budgets"
 import { getBudgetBucketMap } from "@/server/queries/categories"
@@ -45,17 +45,17 @@ async function getAllTransactions(): Promise<TxnRow[]> {
     .all()
 }
 
-function monthBounds(monthsAgo: number) {
-  const anchorMonthStart = new Date(LEDGER_ANCHOR.getFullYear(), LEDGER_ANCHOR.getMonth(), 1)
-  const start = subMonths(anchorMonthStart, monthsAgo)
-  const end = subMonths(anchorMonthStart, monthsAgo - 1)
+function monthBounds(monthsAgo: number, now: Date) {
+  const nowMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+  const start = subMonths(nowMonthStart, monthsAgo)
+  const end = subMonths(nowMonthStart, monthsAgo - 1)
   return { start: toISODate(start), end: toISODate(end) }
 }
 
 // ── Category breakdown (analytics donut) — current month, expense only ─────
 export async function getCategoryBreakdown(): Promise<CategoryBreakdown[]> {
   const rows = await getAllTransactions()
-  const { start, end } = monthBounds(0)
+  const { start, end } = monthBounds(0, today())
   const monthExpenses = rows.filter(
     (r) => r.type === "expense" && r.date >= start && r.date < end
   )
@@ -85,15 +85,16 @@ export async function getCategoryBreakdown(): Promise<CategoryBreakdown[]> {
   })
 }
 
-// ── Spending heatmap — 365 days ending at the anchor ────────────────────────
+// ── Spending heatmap — 365 days ending today ────────────────────────────────
 export async function getSpendingHeatmap(): Promise<SpendingHeatmapDay[]> {
   const rows = await getAllTransactions()
-  const start = subDays(LEDGER_ANCHOR, 364)
+  const now = today()
+  const start = subDays(now, 364)
 
   const byDate = new Map<string, number>()
   for (const r of rows) {
     if (r.type !== "expense") continue
-    if (r.date < toISODate(start) || r.date > toISODate(LEDGER_ANCHOR)) continue
+    if (r.date < toISODate(start) || r.date > toISODate(now)) continue
     byDate.set(r.date, (byDate.get(r.date) ?? 0) + Math.abs(r.amount))
   }
 
@@ -110,8 +111,9 @@ export async function getSpendingHeatmap(): Promise<SpendingHeatmapDay[]> {
 export async function getMonthComparison(): Promise<MonthComparison[]> {
   const rows = await getAllTransactions()
   const bucketMap = await getBudgetBucketMap()
-  const thisMonth = monthBounds(0)
-  const lastMonth = monthBounds(1)
+  const now = today()
+  const thisMonth = monthBounds(0, now)
+  const lastMonth = monthBounds(1, now)
 
   const sumByBucket = (start: string, end: string) => {
     const map = new Map<string, number>()
@@ -143,6 +145,7 @@ export async function getMoneyMovement(): Promise<{
   "90d": MoneyMovementPoint[]
 }> {
   const rows = await getAllTransactions()
+  const now = today()
 
   const sumFor = (date: string) => {
     let moneyIn = 0
@@ -157,14 +160,14 @@ export async function getMoneyMovement(): Promise<{
 
   const sevenDay: MoneyMovementPoint[] = []
   for (let i = 6; i >= 0; i--) {
-    const d = subDays(LEDGER_ANCHOR, i)
+    const d = subDays(now, i)
     const { moneyIn, moneyOut } = sumFor(toISODate(d))
     sevenDay.push({ label: format(d, "EEE"), moneyIn: round(moneyIn), moneyOut: round(moneyOut) })
   }
 
   const thirtyDay: MoneyMovementPoint[] = []
   for (let week = 3; week >= 0; week--) {
-    const weekEnd = subDays(LEDGER_ANCHOR, week * 7)
+    const weekEnd = subDays(now, week * 7)
     const weekStart = subDays(weekEnd, 6)
     let moneyIn = 0
     let moneyOut = 0
@@ -182,7 +185,7 @@ export async function getMoneyMovement(): Promise<{
 
   const ninetyDay: MoneyMovementPoint[] = []
   for (let m = 2; m >= 0; m--) {
-    const { start, end } = monthBounds(m)
+    const { start, end } = monthBounds(m, now)
     let moneyIn = 0
     let moneyOut = 0
     for (const r of rows) {
@@ -208,17 +211,18 @@ export async function getFinancialOverview(): Promise<
 > {
   const rows = await getAllTransactions()
   const income = rows.filter((r) => r.type === "income")
+  const now = today()
 
   const sumForMonthName = (monthName: string, monthsAgoStart: number) => {
     // Sum income across the 12-month window [monthsAgoStart+12, monthsAgoStart)
-    // months back from the anchor, for the given calendar month name.
+    // months back from today, for the given calendar month name.
     let total = 0
     for (const r of income) {
       const d = new Date(r.date)
       if (MONTH_NAMES[d.getMonth()] !== monthName) continue
       const monthsBack =
-        (LEDGER_ANCHOR.getFullYear() - d.getFullYear()) * 12 +
-        (LEDGER_ANCHOR.getMonth() - d.getMonth())
+        (now.getFullYear() - d.getFullYear()) * 12 +
+        (now.getMonth() - d.getMonth())
       if (monthsBack >= monthsAgoStart && monthsBack < monthsAgoStart + 12) {
         total += r.amount
       }
@@ -268,7 +272,7 @@ export async function getRecurringCharges(): Promise<RecurringCharge[]> {
 // ── Monthly spending limit (dashboard widget) ───────────────────────────────
 export async function getSpendingLimitSummary() {
   const db = getDb()
-  const { start, end } = monthBounds(0)
+  const { start, end } = monthBounds(0, today())
   const rows = db
     .select()
     .from(transactions)
@@ -308,7 +312,7 @@ export async function getSpendingLimitSummary() {
 // ── Daily spending (budgets page calendar + month projection) ──────────────
 export async function getDailySpending(): Promise<DailySpending[]> {
   const rows = await getAllTransactions()
-  const { start } = monthBounds(0)
+  const { start } = monthBounds(0, today())
   const monthStart = new Date(start)
   const daysInMonth = new Date(
     monthStart.getFullYear(),

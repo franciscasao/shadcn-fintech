@@ -20,7 +20,15 @@ export const DEMO_USER_ID = 1
 function resolveDbPath() {
   const url = process.env.DATABASE_URL ?? "file:./data/app.db"
   const file = url.startsWith("file:") ? url.slice("file:".length) : url
-  return path.isAbsolute(file) ? file : path.join(process.cwd(), file)
+  if (path.isAbsolute(file)) return file
+  // This runs at request time only (see getSqlite() below), never during
+  // the build — but Turbopack's static analysis can't tell that, and
+  // path.join(process.cwd(), <dynamic>) makes it conservatively assume
+  // this route could read anywhere on disk, which balloons the standalone
+  // output's file trace to the whole project (and, worse, silently breaks
+  // it — see the "outputFileTracingRoot" comment in next.config.ts).
+  // turbopackIgnore tells it to stop trying to resolve this statically.
+  return path.join(/* turbopackIgnore: true */ process.cwd(), file)
 }
 
 let _sqlite: Database.Database | undefined

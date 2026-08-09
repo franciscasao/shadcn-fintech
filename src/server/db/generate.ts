@@ -127,52 +127,24 @@ const INCOME_SOURCES = [
   { merchant: "Freelance Project", logoPath: logo("wise.com"), min: 800, max: 4000 },
 ]
 
-// Maps a fine-grained transaction category to one of the 8 budget-bucket
-// categories used by budget_categories and the analytics breakdown.
-// "Income" has no bucket — it's excluded from spending aggregates.
-export const CATEGORY_TO_BUDGET_BUCKET: Record<string, string> = {
-  "Food & Dining": "Food & Dining",
-  Transport: "Transport",
-  Entertainment: "Entertainment",
-  Shopping: "Shopping",
-  Health: "Health",
-  Travel: "Travel",
-  Education: "Education",
-  Technology: "Subscriptions",
-  Design: "Subscriptions",
-  "AI Tools": "Subscriptions",
-  Productivity: "Subscriptions",
-}
-
-export const BUDGET_BUCKETS = [
-  "Food & Dining",
-  "Transport",
-  "Entertainment",
-  "Shopping",
-  "Subscriptions",
-  "Health",
-  "Travel",
-  "Education",
-] as const
-
 /**
- * The anchor "today" for the whole app's fictional data — Apr 12, 2026,
- * the date of the most recent curated transaction (see seed.ts).
+ * Generates a year+ of demo transaction history ending at `anchor` (the
+ * seed's "today" — see today() in @/lib/today; seed.ts passes it in so
+ * this module has no notion of a fixed calendar date). Only ever consumed
+ * by seed.ts, which is dev-only — see the guard there.
  */
-export const LEDGER_ANCHOR = new Date(2026, 3, 12)
-
-export function generateLedger(): GeneratedTransaction[] {
+export function generateLedger(anchor: Date): GeneratedTransaction[] {
   const txns: GeneratedTransaction[] = []
 
   // Recurring + discretionary spend: a full year of history ending at the
   // anchor date. This overlaps the curated 25 hand-written transactions
-  // (Mar 17 - Apr 10, 2026) — intentionally, since real ledgers have many
-  // transactions on any given day. Without the overlap, the most recent
-  // month would only contain the curated rows, which is too sparse for
-  // monthly aggregates (category breakdown, budget "spent", card
-  // monthlySpend) to look realistic.
-  const historyEnd = LEDGER_ANCHOR
-  const historyStart = addDays(LEDGER_ANCHOR, -365)
+  // (the last ~26 days before the anchor — see fixtures.ts) —
+  // intentionally, since real ledgers have many transactions on any given
+  // day. Without the overlap, the most recent month would only contain the
+  // curated rows, which is too sparse for monthly aggregates (category
+  // breakdown, budget "spent", card monthlySpend) to look realistic.
+  const historyEnd = anchor
+  const historyStart = addDays(anchor, -365)
 
   let cursor = startOfMonth(historyStart)
   while (cursor <= historyEnd) {
@@ -231,6 +203,11 @@ export function generateLedger(): GeneratedTransaction[] {
     for (let i = 0; i < count; i++) {
       const day = randInt(1, daysInMonth)
       const date = new Date(incomeCursor.getFullYear(), incomeCursor.getMonth(), day)
+      // Unlike the recurring/discretionary loops above, incomeCursor walks
+      // whole months rather than being clamped per-row — without this
+      // check, the current (partial) month could roll a day past
+      // historyEnd, seeding "completed" income dated after today.
+      if (date < historyStart || date > historyEnd) continue
       const src = pick(INCOME_SOURCES)
       txns.push({
         merchant: src.merchant,

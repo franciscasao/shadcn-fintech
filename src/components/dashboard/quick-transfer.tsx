@@ -28,11 +28,9 @@ type SendState = "idle" | "sending" | "success"
 export function QuickTransfer({
   contacts,
   accounts,
-  defaultDate,
 }: {
   contacts: Contact[]
   accounts: BankAccount[]
-  defaultDate: string
 }) {
   const router = useRouter()
   const [selectedContact, setSelectedContact] = useState(contacts[0]?.id)
@@ -224,7 +222,6 @@ export function QuickTransfer({
         open={internalOpen}
         onOpenChange={setInternalOpen}
         accounts={accounts}
-        defaultDate={defaultDate}
         onSubmit={handleInternalTransfer}
       />
     </Card>

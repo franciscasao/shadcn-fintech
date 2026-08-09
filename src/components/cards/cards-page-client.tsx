@@ -10,13 +10,13 @@ import { CardControls } from "@/components/cards/card-controls"
 import { CreditSummaryPanel } from "@/components/cards/credit-summary"
 import { IssueCard } from "@/components/cards/issue-card"
 import { CardList } from "@/components/cards/card-list"
+import { EmptyState } from "@/components/empty-state"
 
 interface CardsPageClientProps {
   initialCards: CardData[]
   initialPayments: CardPayment[]
   accounts: BankAccount[]
   holderName: string
-  defaultDate: string
 }
 
 export function CardsPageClient({
@@ -24,7 +24,6 @@ export function CardsPageClient({
   initialPayments,
   accounts,
   holderName,
-  defaultDate,
 }: CardsPageClientProps) {
   const router = useRouter()
   const cards = initialCards
@@ -126,6 +125,23 @@ export function CardsPageClient({
     [activeCard, router]
   )
 
+  if (!activeCard) {
+    return (
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-8">
+          <EmptyState
+            variant="cards"
+            title="No cards yet"
+            description="Issue a physical or virtual card to start spending — see the panel on the right."
+          />
+        </div>
+        <div className="lg:col-span-4">
+          <IssueCard accounts={accounts} holderName={holderName} onCardCreated={handleCardCreated} />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-12">
       {/* Main column: card preview + controls + credit summary */}
@@ -148,7 +164,6 @@ export function CardsPageClient({
             credit={activeCard.credit}
             accounts={accounts}
             payments={activeCardPayments}
-            defaultDate={defaultDate}
             onPay={handlePay}
             onDeletePayment={handleDeletePayment}
           />

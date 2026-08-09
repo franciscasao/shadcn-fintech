@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
 import {
   Card,
   CardContent,
@@ -15,14 +14,6 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import {
   Avatar,
   AvatarFallback,
@@ -32,28 +23,22 @@ import {
   UserIcon,
   ShieldIcon,
   BellIcon,
-  CreditCardIcon,
   PaletteIcon,
-  LoaderIcon,
   MonitorIcon,
   SunIcon,
   MoonIcon,
   CheckIcon,
-  DownloadIcon,
   SmartphoneIcon,
   LaptopIcon,
   TabletIcon,
-  SparklesIcon,
   TagIcon,
   BlocksIcon,
 } from "lucide-react"
 import { CategoriesTab } from "@/components/settings/categories-tab"
 import { ModulesTab } from "@/components/settings/modules-tab"
-import { useTableSort } from "@/hooks/use-table-sort"
-import { SortIcon } from "@/components/sort-icon"
 import type { Category } from "@/lib/types"
 
-type TabId = "profile" | "security" | "notifications" | "billing" | "appearance" | "categories" | "modules"
+type TabId = "profile" | "security" | "notifications" | "appearance" | "categories" | "modules"
 
 const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: "profile", label: "Profile", icon: <UserIcon className="size-4" /> },
@@ -61,37 +46,37 @@ const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: "notifications", label: "Notifications", icon: <BellIcon className="size-4" /> },
   { id: "categories", label: "Categories", icon: <TagIcon className="size-4" /> },
   { id: "modules", label: "Modules", icon: <BlocksIcon className="size-4" /> },
-  { id: "billing", label: "Billing", icon: <CreditCardIcon className="size-4" /> },
   { id: "appearance", label: "Appearance", icon: <PaletteIcon className="size-4" /> },
 ]
 
 // ── Profile Tab ──────────────────────────────────────────────────────────────
+// Read-only — there's no PATCH /api/user endpoint (nor an auth model that
+// would need one yet), so this shows the real seeded/bootstrapped identity
+// rather than pretending an edit form saves anywhere.
 
-function ProfileTab() {
-  const [saving, setSaving] = React.useState(false)
-  const [name, setName] = React.useState("Abderrahim G.")
-  const [email, setEmail] = React.useState("abderrahim@fintech.com")
-
-  function handleSave() {
-    setSaving(true)
-    setTimeout(() => setSaving(false), 1200)
-  }
+function ProfileTab({ user }: { user: { name: string; email: string; avatar: string } }) {
+  const userInitials = user.name
+    .trim()
+    .split(/\s+/)
+    .map((p) => p[0])
+    .join("")
+    .toUpperCase()
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Profile Information</CardTitle>
-        <CardDescription>Update your account profile details</CardDescription>
+        <CardDescription>Your account profile</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex items-center gap-4">
           <Avatar className="size-16">
-            <AvatarImage src="/avatars/user.jpg" alt="User avatar" />
-            <AvatarFallback className="text-lg">AG</AvatarFallback>
+            <AvatarImage src={user.avatar} alt={user.name} />
+            <AvatarFallback className="text-lg">{userInitials}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-medium">{name}</p>
-            <p className="text-sm text-muted-foreground">{email}</p>
+            <p className="font-medium">{user.name}</p>
+            <p className="text-sm text-muted-foreground">{user.email}</p>
           </div>
         </div>
 
@@ -100,31 +85,19 @@ function ProfileTab() {
             <label className="text-sm font-medium" htmlFor="name">
               Full Name
             </label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
+            <Input id="name" value={user.name} readOnly disabled />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium" htmlFor="email">
               Email Address
             </label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <Input id="email" type="email" value={user.email} readOnly disabled />
           </div>
         </div>
-
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={saving}>
-            {saving && <LoaderIcon className="size-4 animate-spin" />}
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
-        </div>
+        <p className="text-xs text-muted-foreground">
+          Set from the OWNER_NAME / OWNER_EMAIL environment variables the first time the app
+          starts (see the README) — there&rsquo;s no edit form yet, since there&rsquo;s no auth to gate one.
+        </p>
       </CardContent>
     </Card>
   )
@@ -290,181 +263,6 @@ function NotificationsTab() {
   )
 }
 
-// ── Billing Tab ──────────────────────────────────────────────────────────────
-
-const invoices = [
-  { date: "Mar 01, 2026", amount: "₱0.00", status: "Free Plan", id: "INV-001" },
-  { date: "Feb 01, 2026", amount: "₱0.00", status: "Free Plan", id: "INV-002" },
-  { date: "Jan 01, 2026", amount: "₱0.00", status: "Free Plan", id: "INV-003" },
-]
-
-const freeFeatures = [
-  "1 bank account connection",
-  "Basic transaction tracking",
-  "Monthly budget tracking",
-  "Standard support",
-]
-
-const proFeatures = [
-  "Unlimited bank connections",
-  "Advanced analytics & insights",
-  "Unlimited virtual cards",
-  "Priority support",
-  "Custom budget categories",
-  "Export to CSV & PDF",
-]
-
-type InvoiceSortKey = "date" | "status"
-
-function BillingTab() {
-  const { sortKey, sortDir, toggleSort, sorted: sortedInvoices } = useTableSort<
-    (typeof invoices)[number],
-    InvoiceSortKey
-  >(invoices, (a, b, key) => {
-    switch (key) {
-      case "date":
-        return new Date(a.date).getTime() - new Date(b.date).getTime()
-      case "status":
-        return a.status.localeCompare(b.status)
-    }
-  })
-
-  return (
-    <div className="space-y-6">
-      {/* Current Plan */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Current Plan</CardTitle>
-          <CardDescription>
-            You are currently on the free plan
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold">Vault Free</h3>
-                <Badge variant="secondary">Current</Badge>
-              </div>
-              <ul className="mt-3 space-y-1.5">
-                {freeFeatures.map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckIcon className="size-3.5 text-emerald-500" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold tabular-nums">₱0</p>
-              <p className="text-sm text-muted-foreground">/month</p>
-            </div>
-          </div>
-
-          <div className="rounded-lg border bg-muted/30 p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <SparklesIcon className="size-4 text-primary" />
-                  <h4 className="font-semibold">Vault Pro</h4>
-                </div>
-                <ul className="mt-3 space-y-1.5">
-                  {proFeatures.map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <CheckIcon className="size-3.5 text-primary" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold tabular-nums">₱12</p>
-                <p className="text-sm text-muted-foreground">/month</p>
-              </div>
-            </div>
-            <div className="mt-4">
-              <Button>Upgrade to Pro</Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Payment Method */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Payment Method</CardTitle>
-          <CardDescription>Manage your payment details</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <div className="flex items-center gap-3">
-              <div className="flex size-8 items-center justify-center rounded-full bg-muted">
-                <CreditCardIcon className="size-4" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">Visa ending in 4589</p>
-                <p className="text-xs text-muted-foreground">Expires 09/28</p>
-              </div>
-            </div>
-            <Button variant="outline" size="sm">
-              Update
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Billing History */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Billing History</CardTitle>
-          <CardDescription>
-            Download past invoices and receipts
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead
-                  className="cursor-pointer select-none"
-                  onClick={() => toggleSort("date")}
-                >
-                  Date <SortIcon col="date" sortKey={sortKey} sortDir={sortDir} />
-                </TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead
-                  className="cursor-pointer select-none"
-                  onClick={() => toggleSort("status")}
-                >
-                  Status <SortIcon col="status" sortKey={sortKey} sortDir={sortDir} />
-                </TableHead>
-                <TableHead className="text-right">Invoice</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedInvoices.map((inv) => (
-                <TableRow key={inv.id}>
-                  <TableCell>{inv.date}</TableCell>
-                  <TableCell className="tabular-nums">{inv.amount}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{inv.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon-xs">
-                      <DownloadIcon className="size-3.5" />
-                      <span className="sr-only">Download</span>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
-  )
-}
-
 // ── Appearance Tab ───────────────────────────────────────────────────────────
 
 function AppearanceTab() {
@@ -517,7 +315,13 @@ function AppearanceTab() {
 
 // ── Main Settings Page ───────────────────────────────────────────────────────
 
-export function SettingsPageClient({ categories }: { categories: Category[] }) {
+export function SettingsPageClient({
+  categories,
+  user,
+}: {
+  categories: Category[]
+  user: { name: string; email: string; avatar: string }
+}) {
   const searchParams = useSearchParams()
   const tabParam = searchParams.get("tab")
   const [activeTab, setActiveTab] = React.useState<TabId>(
@@ -525,12 +329,11 @@ export function SettingsPageClient({ categories }: { categories: Category[] }) {
   )
 
   const tabContent: Record<TabId, React.ReactNode> = {
-    profile: <ProfileTab />,
+    profile: <ProfileTab user={user} />,
     security: <SecurityTab />,
     notifications: <NotificationsTab />,
     categories: <CategoriesTab categories={categories} />,
     modules: <ModulesTab />,
-    billing: <BillingTab />,
     appearance: <AppearanceTab />,
   }
 

@@ -30,11 +30,9 @@ type AccountType = (typeof filterTabs)[number]["value"]
 export function AccountsPageClient({
   initialAccounts,
   impacts,
-  defaultDate,
 }: {
   initialAccounts: BankAccount[]
   impacts: Record<string, AccountImpact>
-  defaultDate: string
 }) {
   const router = useRouter()
   const [selectedType, setSelectedType] = useState<AccountType>("all")
@@ -170,7 +168,6 @@ export function AccountsPageClient({
         open={transferOpen}
         onOpenChange={setTransferOpen}
         accounts={accounts}
-        defaultDate={defaultDate}
         onSubmit={handleInternalTransfer}
       />
     </div>

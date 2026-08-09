@@ -41,6 +41,9 @@ yarn-error.log*
 /data/*.db-shm
 /data/*.db-wal
 
+# database backups (pnpm db:backup — see scripts/backup.ts)
+/backups/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

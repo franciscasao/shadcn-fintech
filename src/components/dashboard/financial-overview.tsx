@@ -24,6 +24,7 @@ import {
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, type DotProps } from "recharts"
 import { CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { today } from "@/lib/today"
 import type { DateRange } from "react-day-picker"
 
 function SquareDot({ cx, cy, fill, opacity = 1, size = 6 }: DotProps & { size?: number; opacity?: number }) {
@@ -65,9 +66,9 @@ export function FinancialOverview({
 }: {
   financialOverview: OverviewPoint[]
 }) {
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: new Date(2026, 0, 1),
-    to: new Date(2026, 11, 31),
+  const [date, setDate] = useState<DateRange | undefined>(() => {
+    const year = today().getFullYear()
+    return { from: new Date(year, 0, 1), to: new Date(year, 11, 31) }
   })
 
   const filteredData = useMemo(() => {

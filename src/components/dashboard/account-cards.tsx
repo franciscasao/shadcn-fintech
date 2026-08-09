@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
-import { accountCards } from "@/data/seed"
 import {
   CreditCardIcon,
   PlusIcon,
@@ -31,29 +30,37 @@ import type { BankAccount } from "@/lib/types"
 
 type AddState = "idle" | "form" | "adding" | "success"
 
-const initialCards = [
-  {
-    ...accountCards[0],
-    style: "bg-muted text-foreground",
-    icon: <PhilippinePesoIcon className="size-5 opacity-30" />,
-    chipColor: "bg-foreground/10",
-    last4: "4589",
-  },
-  {
-    ...accountCards[1],
-    style: "bg-primary text-primary-foreground",
-    icon: <BitcoinIcon className="size-5 opacity-30" />,
-    chipColor: "bg-primary-foreground/20",
-    last4: "7321",
-  },
-  {
-    ...accountCards[2],
-    style: "bg-card text-card-foreground ring-1 ring-border",
-    icon: <ChartLineIcon className="size-5 opacity-30" />,
-    chipColor: "bg-foreground/10",
-    last4: "9012",
-  },
+const CARD_STYLES = [
+  { style: "bg-muted text-foreground", chipColor: "bg-foreground/10" },
+  { style: "bg-primary text-primary-foreground", chipColor: "bg-primary-foreground/20" },
+  { style: "bg-card text-card-foreground ring-1 ring-border", chipColor: "bg-foreground/10" },
 ]
+
+const TYPE_ICON: Record<BankAccount["type"], React.ReactNode> = {
+  checking: <PhilippinePesoIcon className="size-5 opacity-30" />,
+  savings: <TrendingUpIcon className="size-5 opacity-30" />,
+  crypto: <BitcoinIcon className="size-5 opacity-30" />,
+  investment: <ChartLineIcon className="size-5 opacity-30" />,
+}
+
+/** The card faces shown here — the top 3 accounts by balance — are real,
+ * derived from the same `accounts` data as the headline wallet balance
+ * below (walletBalance, computed from this same prop). Neither is
+ * invented. */
+function realCards(accounts: BankAccount[]) {
+  return [...accounts]
+    .sort((a, b) => b.balance - a.balance)
+    .slice(0, 3)
+    .map((a, i) => ({
+      id: a.id,
+      label: a.name,
+      balance: a.balance.toLocaleString("en-PH", { minimumFractionDigits: 2 }),
+      currency: a.currency,
+      last4: a.accountNumber.slice(-4),
+      icon: TYPE_ICON[a.type],
+      ...CARD_STYLES[i % CARD_STYLES.length],
+    }))
+}
 
 const newCardOptions = [
   { value: "savings", label: "Savings Account", currency: "₱", style: "bg-emerald-600 text-white", icon: <TrendingUpIcon className="size-5 opacity-30" />, chipColor: "bg-white/20" },
@@ -62,8 +69,8 @@ const newCardOptions = [
 ]
 
 export function AccountCards({ accounts }: { accounts: BankAccount[] }) {
-  const [cards, setCards] = useState(initialCards)
-  const [order, setOrder] = useState(() => initialCards.map((_, i) => i))
+  const [cards, setCards] = useState(() => realCards(accounts))
+  const [order, setOrder] = useState(() => cards.map((_, i) => i))
   const [addState, setAddState] = useState<AddState>("idle")
   const [newCardType, setNewCardType] = useState("savings")
   const [newCardName, setNewCardName] = useState("")
@@ -164,9 +171,8 @@ export function AccountCards({ accounts }: { accounts: BankAccount[] }) {
                           **** {c.last4}
                         </span>
                         <p className="text-xl font-bold tabular-nums tracking-tight">
-                          {c.currency === "BTC"
-                            ? `${c.balance} ${c.currency}`
-                            : `${c.currency}${c.balance}`}
+                          {c.currency}
+                          {c.balance}
                         </p>
                       </div>
                     </motion.button>

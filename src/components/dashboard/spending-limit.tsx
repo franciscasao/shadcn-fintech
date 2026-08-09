@@ -5,13 +5,19 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
+import { cn } from "@/lib/utils"
 import type { SpendingLimitSummary } from "@/lib/types"
 import { ShieldCheckIcon } from "lucide-react"
 
 export function SpendingLimit({ spendingLimit }: { spendingLimit: SpendingLimitSummary }) {
-  const percentUsed = Math.round(
-    (spendingLimit.spent / spendingLimit.budget) * 100
-  )
+  // budget is the sum of every budget category's target (see
+  // getSpendingLimitSummary in @/server/queries/analytics) — 0 until the
+  // owner sets any, which a bare spent/budget division would turn into
+  // NaN/Infinity rather than a sane "no limit set yet" reading.
+  const hasBudget = spendingLimit.budget > 0
+  const percentUsed = hasBudget
+    ? Math.round((spendingLimit.spent / spendingLimit.budget) * 100)
+    : 0
 
   return (
     <Card>
@@ -27,10 +33,12 @@ export function SpendingLimit({ spendingLimit }: { spendingLimit: SpendingLimitS
         <div>
           <p className="text-xs text-muted-foreground">Budget</p>
           <p className="text-2xl font-bold tabular-nums tracking-tight">
-            ₱{spendingLimit.budget.toLocaleString()}{" "}
-            <span className="text-sm font-normal text-muted-foreground">
-              {spendingLimit.currency}
-            </span>
+            {hasBudget ? `₱${spendingLimit.budget.toLocaleString()}` : "Not set"}{" "}
+            {hasBudget && (
+              <span className="text-sm font-normal text-muted-foreground">
+                {spendingLimit.currency}
+              </span>
+            )}
           </p>
         </div>
 
@@ -45,8 +53,17 @@ export function SpendingLimit({ spendingLimit }: { spendingLimit: SpendingLimitS
           </div>
           <div className="text-right">
             <p className="text-xs text-muted-foreground">Remaining</p>
-            <p className="font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-              ₱{spendingLimit.remaining.toLocaleString()}
+            <p
+              className={cn(
+                "font-semibold tabular-nums",
+                !hasBudget
+                  ? "text-muted-foreground"
+                  : spendingLimit.remaining < 0
+                    ? "text-destructive"
+                    : "text-emerald-600 dark:text-emerald-400"
+              )}
+            >
+              {hasBudget ? `₱${spendingLimit.remaining.toLocaleString()}` : "—"}
             </p>
           </div>
         </div>

@@ -21,7 +21,6 @@ interface TransactionFiltersBarProps {
   dateTo: string | undefined
   datePreset: DateRangePreset | undefined
   month: string | undefined
-  anchorDate: string
   onPresetChange: (preset: DateRangePreset) => void
   onCustomRangeChange: (from: string | undefined, to: string | undefined) => void
 
@@ -63,7 +62,6 @@ export function TransactionFiltersBar({
   dateTo,
   datePreset,
   month,
-  anchorDate,
   onPresetChange,
   onCustomRangeChange,
   typeFilter,
@@ -120,7 +118,6 @@ export function TransactionFiltersBar({
         dateTo={dateTo}
         datePreset={datePreset}
         month={month}
-        anchorDate={anchorDate}
         onPresetChange={onPresetChange}
         onCustomRangeChange={onCustomRangeChange}
       />

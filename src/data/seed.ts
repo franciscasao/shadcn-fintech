@@ -3,13 +3,15 @@
 // ---------------------------------------------------------------------------
 //
 // This file used to hold every dataset the app rendered. It now only holds
-// the datasets that are out of scope for the SQLite backend (crypto,
-// investments, AI insights/health score, FAQ/support, and the dashboard
-// wallet widget) — see the "Core mutable domains" scope decision.
+// the remaining sample-data-only pages — crypto, investments, the dashboard
+// health-score widget, AI insights, and FAQ/support — all marked as
+// "preview" in the nav and on-page (see @/components/preview-banner and the
+// Badge on health-score.tsx / ai-insights.tsx) since none of it is backed
+// by real data yet.
 //
 // Everything else (accounts, transactions, transfers, cards, contacts,
 // notifications, budgets, savings goals, and all analytics derived from
-// them) is now read from the database via src/server/queries/*.
+// them) is read from the database via src/server/queries/*.
 //
 // Domain types used to live inline here; they've moved to src/lib/types.ts
 // and are re-exported below so existing `import type { X } from "@/data/seed"`
@@ -45,10 +47,8 @@ export type {
 } from "@/lib/types"
 
 import type {
-  AccountCard,
   AiInsight,
   CryptoCoin,
-  CryptoTransaction,
   FaqItem,
   Holding,
   HealthFactor,
@@ -56,38 +56,6 @@ import type {
   SupportTicket,
   WatchlistItem,
 } from "@/lib/types"
-
-// ── Account Cards (dashboard wallet widget) ────────────────────────────────
-export const accountCards: AccountCard[] = [
-  {
-    id: "1",
-    label: "Savings Account",
-    balance: "42,500",
-    currency: "₱",
-    variant: "default",
-  },
-  {
-    id: "2",
-    label: "Crypto Wallet",
-    balance: "1.24",
-    currency: "BTC",
-    variant: "dark",
-  },
-  {
-    id: "3",
-    label: "Investment Portfolio",
-    balance: "28,300",
-    currency: "₱",
-    variant: "primary",
-  },
-]
-
-// ── Wallet Balance ─────────────────────────────────────────────────────────
-export const walletBalance = {
-  amount: 84765.0,
-  changePercent: 12.4,
-  changeDirection: "up" as const,
-}
 
 // ══════════════════════════════════════════════════════════════════════════════
 // PAGE DATA: Analytics — AI insights (editorial copy, not derived from the ledger)
@@ -276,32 +244,6 @@ export const cryptoCoins: CryptoCoin[] = [
     holdings: 120,
     sparklineData: [37.2, 37.8, 38.1, 37.5, 38.0, 38.4, 37.9, 38.2, 38.6, 38.3, 38.7, 39.0, 38.5, 38.7],
   },
-]
-
-export const cryptoTransactions: CryptoTransaction[] = [
-  { id: "ct1", type: "buy", coin: "Bitcoin", coinSymbol: "BTC", logo: "/logos/bitcoin-com.png", amount: 0.05, value: 3421.02, date: "Apr 12, 2026", status: "completed" },
-  { id: "ct2", type: "sell", coin: "Ethereum", coinSymbol: "ETH", logo: "/logos/ethereum-org.png", amount: 2.0, value: 7690.40, date: "Apr 11, 2026", status: "completed" },
-  { id: "ct3", type: "swap", coin: "SOL → ETH", coinSymbol: "SOL", logo: "/logos/solana-com.png", amount: 10, value: 1789.00, date: "Apr 10, 2026", status: "completed" },
-  { id: "ct4", type: "receive", coin: "Bitcoin", coinSymbol: "BTC", logo: "/logos/bitcoin-com.png", amount: 0.1, value: 6842.05, date: "Apr 09, 2026", status: "completed" },
-  { id: "ct5", type: "buy", coin: "Solana", coinSymbol: "SOL", logo: "/logos/solana-com.png", amount: 20, value: 3578.00, date: "Apr 08, 2026", status: "completed" },
-  { id: "ct6", type: "send", coin: "Ethereum", coinSymbol: "ETH", logo: "/logos/ethereum-org.png", amount: 0.5, value: 1922.60, date: "Apr 07, 2026", status: "pending" },
-  { id: "ct7", type: "buy", coin: "Dogecoin", coinSymbol: "DOGE", logo: "/logos/dogecoin-com.png", amount: 10000, value: 1245.00, date: "Apr 06, 2026", status: "completed" },
-  { id: "ct8", type: "sell", coin: "Cardano", coinSymbol: "ADA", logo: "/logos/cardano-org.png", amount: 2000, value: 904.20, date: "Apr 05, 2026", status: "completed" },
-]
-
-export const cryptoPriceHistory = [
-  { time: "00:00", btc: 67800, eth: 3790 },
-  { time: "02:00", btc: 67500, eth: 3780 },
-  { time: "04:00", btc: 67900, eth: 3810 },
-  { time: "06:00", btc: 68200, eth: 3830 },
-  { time: "08:00", btc: 67800, eth: 3820 },
-  { time: "10:00", btc: 68500, eth: 3850 },
-  { time: "12:00", btc: 68100, eth: 3840 },
-  { time: "14:00", btc: 68800, eth: 3860 },
-  { time: "16:00", btc: 68300, eth: 3835 },
-  { time: "18:00", btc: 68600, eth: 3855 },
-  { time: "20:00", btc: 68200, eth: 3840 },
-  { time: "22:00", btc: 68420, eth: 3845 },
 ]
 
 // ══════════════════════════════════════════════════════════════════════════════
