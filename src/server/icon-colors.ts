@@ -32,6 +32,11 @@ export const ICON_COLORS: Record<string, string> = {
   zap: "text-yellow-600",
   "trending-up": "text-emerald-600",
   "piggy-bank": "text-pink-600",
+  home: "text-blue-600",
+  "heart-handshake": "text-rose-600",
+  music: "text-purple-600",
+  landmark: "text-amber-600",
+  "credit-card": "text-red-600",
 }
 
 export const KNOWN_ICON_NAMES = Object.keys(ICON_COLORS)
