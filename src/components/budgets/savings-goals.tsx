@@ -1,22 +1,30 @@
+"use client"
+
+import { useRouter } from "next/navigation"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import type { SavingsGoal } from "@/lib/types"
-import {
-  PalmtreeIcon,
-  ShieldIcon,
-  CarIcon,
-  HomeIcon,
-} from "lucide-react"
-
-const iconMap: Record<string, React.ReactNode> = {
-  "palm-tree": <PalmtreeIcon className="size-5" />,
-  shield: <ShieldIcon className="size-5" />,
-  car: <CarIcon className="size-5" />,
-  home: <HomeIcon className="size-5" />,
-}
+import { savingsGoalIconMap } from "@/components/budgets/savings-goal-icons"
+import { AddSavingsGoal, type NewSavingsGoalInput } from "@/components/budgets/add-savings-goal"
 
 export function SavingsGoals({ savingsGoals }: { savingsGoals: SavingsGoal[] }) {
+  const router = useRouter()
+
+  async function handleAddSavingsGoal(input: NewSavingsGoalInput) {
+    const res = await fetch("/api/savings-goals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => null)
+      throw new Error(body?.error ?? "Failed to add savings goal")
+    }
+    router.refresh()
+  }
+
   return (
     <Card className="col-span-full">
       <CardHeader>
@@ -42,7 +50,7 @@ export function SavingsGoals({ savingsGoals }: { savingsGoals: SavingsGoal[] }) 
                 className="flex gap-4 rounded-xl border p-4"
               >
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                  {iconMap[g.iconName]}
+                  {savingsGoalIconMap[g.iconName]}
                 </div>
                 <div className="flex-1 space-y-2">
                   <div className="flex items-center justify-between">
@@ -71,6 +79,7 @@ export function SavingsGoals({ savingsGoals }: { savingsGoals: SavingsGoal[] }) 
               </div>
             )
           })}
+          <AddSavingsGoal onAdd={handleAddSavingsGoal} />
         </div>
       </CardContent>
     </Card>
