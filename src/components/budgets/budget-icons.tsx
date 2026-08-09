@@ -22,6 +22,8 @@ import {
   ShieldIcon,
   WifiIcon,
   ZapIcon,
+  TrendingUpIcon,
+  PiggyBankIcon,
 } from "lucide-react"
 
 // Shared between BudgetRings (rendering) and AddBudget (icon picker) — kept
@@ -53,6 +55,8 @@ export const BUDGET_ICONS = [
   { name: "shield", label: "Insurance" },
   { name: "wifi", label: "Internet" },
   { name: "zap", label: "Electricity" },
+  { name: "trending-up", label: "Investments" },
+  { name: "piggy-bank", label: "Savings" },
 ] as const
 
 // Budget bucket names used to live here as a hardcoded constant, but budgets
@@ -85,4 +89,6 @@ export const budgetIconMap: Record<string, React.ReactNode> = {
   shield: <ShieldIcon className="size-5" />,
   wifi: <WifiIcon className="size-5" />,
   zap: <ZapIcon className="size-5" />,
+  "trending-up": <TrendingUpIcon className="size-5" />,
+  "piggy-bank": <PiggyBankIcon className="size-5" />,
 }
