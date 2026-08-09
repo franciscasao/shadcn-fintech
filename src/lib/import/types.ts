@@ -34,6 +34,12 @@ export type DraftTransaction = {
   amount: number // always positive; sign is carried by `type`
   type: TxType
   category: string // "" if no guess and not yet chosen
+  /** A parser-supplied category hint (e.g. from a MariBank Savings row's
+   * "Transfer" / "Reward" subtype label) — consulted by guessCategories()
+   * ahead of its keyword table, but only ever applied when it names a
+   * category the user actually has. Not shown or editable directly; once
+   * guessCategories() runs, `category` is what the UI reads. */
+  categoryHint?: string
   include: boolean
   issues: DraftIssue[]
   /** Set when this row looks like it already exists in the ledger — id of

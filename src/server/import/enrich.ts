@@ -154,13 +154,15 @@ const KEYWORD_CATEGORIES: Array<{ pattern: RegExp; category: string }> = [
 
 /** Assigns each uncategorized draft row a category name, using — in order —
  * an exact normalized-merchant match against the user's history, a
- * containment match against the same history, then the keyword table
- * above. Only names present in `validCategories` are ever assigned, since
- * the settings page's per-category usage counts assume every
- * transactions.category value corresponds to a real category row. A row
- * that still ends up with no guess is left with an empty category — that's
- * reported once, as an error, by validateDraftRow below, rather than also
- * warning about it here. */
+ * containment match against the same history, the parser's own
+ * categoryHint (if it set one), then the keyword table above. Only names
+ * present in `validCategories` are ever assigned, since the settings page's
+ * per-category usage counts assume every transactions.category value
+ * corresponds to a real category row — this applies to categoryHint too, so
+ * a parser's hint is just another guess, never a bypass of that check. A
+ * row that still ends up with no guess is left with an empty category —
+ * that's reported once, as an error, by validateDraftRow below, rather than
+ * also warning about it here. */
 export function guessCategories(rows: DraftTransaction[], validCategories: string[]): void {
   const validSet = new Set(validCategories)
   const history = loadMerchantCategoryHistory()
@@ -175,6 +177,9 @@ export function guessCategories(rows: DraftTransaction[], validCategories: strin
     if (!guess) {
       const hit = historyEntries.find(([key]) => merchantsLikelyMatch(norm, key))
       guess = hit?.[1]
+    }
+    if (!guess) {
+      guess = row.categoryHint
     }
     if (!guess) {
       guess = KEYWORD_CATEGORIES.find((k) => k.pattern.test(row.merchant))?.category

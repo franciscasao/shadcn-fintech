@@ -105,7 +105,7 @@ export function ImportDropzone({ file, onFileSelected }: ImportDropzoneProps) {
           <UploadIcon className={cn("size-5", dragging ? "text-primary" : "text-muted-foreground")} />
         </div>
         <p className="text-sm font-medium">Drop a MariBank e-Statement, or click to browse</p>
-        <p className="text-xs text-muted-foreground">MariBank e-Statement PDF, up to 10 MB</p>
+        <p className="text-xs text-muted-foreground">MariBank credit card or savings e-Statement PDF, up to 10 MB</p>
         <input
           ref={inputRef}
           type="file"

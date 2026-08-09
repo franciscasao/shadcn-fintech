@@ -193,8 +193,8 @@ export function ImportStatementPageClient({
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">Import transactions</h1>
         <p className="text-sm text-muted-foreground">
-          Upload a MariBank e-Statement PDF — we&apos;ll draft the transactions for you to review before anything&apos;s
-          written to your ledger.
+          Upload a MariBank credit card or savings e-Statement PDF — we&apos;ll draft the transactions for you to
+          review before anything&apos;s written to your ledger.
         </p>
       </div>
 
@@ -307,7 +307,7 @@ export function ImportStatementPageClient({
                     </>
                   ) : (
                     <p className="mb-3 text-sm text-muted-foreground">
-                      Try a different file — only MariBank e-Statement PDFs are supported.
+                      Try a different file — only MariBank credit card or savings e-Statement PDFs are supported.
                     </p>
                   )}
                   <Button variant="outline" size="sm" onClick={backToFileSelection}>

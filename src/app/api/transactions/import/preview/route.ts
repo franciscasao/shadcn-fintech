@@ -1,12 +1,12 @@
 import { getCategories } from "@/server/queries/categories"
 import { getCards } from "@/server/queries/cards"
-import { parseMariBankStatement, resolveRowDate } from "@/server/import/maribank"
-import { parseMoney } from "@/server/import/normalize"
+import { parseStatement } from "@/server/import/statement"
 import { detectDuplicates, guessCategories, validateDraftRow } from "@/server/import/enrich"
-import type { DraftTransaction, PreviewResponse } from "@/lib/import/types"
+import type { PreviewResponse } from "@/lib/import/types"
 
-// Parses an uploaded MariBank MariCard credit e-Statement PDF into an
-// editable preview of the transactions it would create — nothing is
+// Parses an uploaded MariBank e-Statement PDF (credit card or savings — see
+// src/server/import/statement.ts for how the layout is auto-detected) into
+// an editable preview of the transactions it would create — nothing is
 // written to the database here. See src/app/api/transactions/import/route.ts
 // for the commit step.
 
@@ -37,7 +37,7 @@ export async function POST(request: Request): Promise<Response> {
     return badRequest(`File must be under ${MAX_FILE_BYTES / (1024 * 1024)} MB`)
   }
   if (!isPdf(file)) {
-    return badRequest("Only MariBank e-Statement PDFs are supported right now")
+    return badRequest("Only MariBank e-Statement PDFs (credit card or savings) are supported right now")
   }
 
   const accountIdRaw = form.get("accountId")
@@ -57,15 +57,15 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const data = new Uint8Array(await file.arrayBuffer())
-  const parsed = await parseMariBankStatement(data)
+  const parsed = await parseStatement(data)
   if (!parsed.ok) {
     if (parsed.reason === "no-text-layer") {
       return badRequest(
         "This PDF has no text layer (likely a scan) — download the e-Statement PDF from the MariBank app instead."
       )
     }
-    // "not-maribank" — the table's header labels weren't found anywhere in
-    // the file. Rather than a bare error, route through the same
+    // "unrecognized" — no known layout's header labels were found anywhere
+    // in the file. Rather than a bare error, route through the same
     // empty-rows + unmatchedLines display the review step already has, so
     // the user can see what was actually read instead of just being told
     // it failed.
@@ -83,20 +83,7 @@ export async function POST(request: Request): Promise<Response> {
     return badRequest("No transaction rows found in this file")
   }
 
-  const draftRows: DraftTransaction[] = parsed.rows.map((r, i) => {
-    const signed = parseMoney(r.amountToken) ?? 0
-    return {
-      draftId: `row-${i}`,
-      date: resolveRowDate(r.postedDate || r.transactionDate, parsed.meta) ?? "",
-      merchant: (r.descriptionLines[0] ?? "").trim(),
-      amount: Math.abs(signed),
-      type: signed < 0 ? "expense" : "income",
-      category: "",
-      include: true,
-      issues: [],
-      sourceLine: r.sourceLine,
-    }
-  })
+  const draftRows = parsed.rows
 
   const [categoryRows, cards] = await Promise.all([getCategories(), getCards()])
   const categoryNames = categoryRows.map((c) => c.name)
